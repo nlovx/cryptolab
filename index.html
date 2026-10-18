@@ -1,0 +1,925 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="CryptoLab: учим криптографию с нуля до уровня элиты. Задания с флагами, лаборатории, повторение.">
+</head>
+<body>
+<title>CryptoLab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Golos+Text:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a hacking-lab shell (deliberately single dark theme, like a terminal room). Sticky top bar with XP and level, tab nav, one view at a time: dashboard, path map, room with tasks, spaced review, toolbox, method. */
+:root{
+  --bg:#0a0f1d; --panel:#111a2d; --panel2:#17213a; --line:#243150; --ink:#e7ecf8; --muted:#8f9bba;
+  --accent:#27c6a8; --accent-soft:#0f3b38; --xp:#ffb547; --xp-soft:#3d2c10; --good:#3ddc97; --good-soft:#0f3526;
+  --bad:#ff6b6b; --bad-soft:#3d1717; --soon:#5b6684;
+  --f-display:"Unbounded","Golos Text",system-ui,sans-serif;
+  --f-body:"Golos Text",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55;margin:0}
+a{color:var(--accent)}
+button{font-family:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1080px;margin:0 auto}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topin{display:flex;align-items:center;gap:14px;padding-block:10px;flex-wrap:wrap}
+.logo{font:700 18px var(--f-display);letter-spacing:-.01em;display:flex;align-items:center;gap:8px;cursor:pointer;background:none;border:0;color:var(--ink);padding:0}
+.logo i{width:26px;height:26px;border-radius:7px;background:var(--accent);display:grid;place-items:center;color:var(--bg);font:700 14px var(--f-mono);font-style:normal}
+.nav{display:flex;gap:4px;overflow-x:auto;flex:1;min-width:0;scrollbar-width:none}
+.nav button{background:none;border:0;color:var(--muted);font:600 14.5px var(--f-body);padding:8px 12px;border-radius:9px;cursor:pointer;white-space:nowrap}
+.nav button.on{background:var(--panel2);color:var(--ink)}
+.me{display:flex;align-items:center;gap:10px;font-size:14px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:var(--panel2);font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.chip.xp{color:var(--xp)} .chip.fire{color:#ff8a5c}
+@media (max-width:720px){.nav{order:3;flex-basis:100%}}
+
+main{padding-block:24px 64px}
+h1,h2,h3{margin:0;text-wrap:balance}
+h1{font:700 clamp(24px,4.4vw,36px)/1.15 var(--f-display)}
+h2{font:600 clamp(19px,3vw,24px)/1.25 var(--f-display)}
+h3{font:600 17px/1.3 var(--f-body)}
+p{margin:0}
+.muted{color:var(--muted)}
+.stack{display:flex;flex-direction:column;gap:16px}
+.eyebrow{font:600 12px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;min-width:0}
+.btn{font:600 15px var(--f-body);border:0;border-radius:10px;padding:10px 16px;cursor:pointer;background:var(--accent);color:#04201b}
+.btn.ghost{background:var(--panel2);color:var(--ink)}
+.btn.small{padding:7px 12px;font-size:14px}
+.btn:disabled{opacity:.45;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:760px){.grid2,.grid3{grid-template-columns:1fr}}
+.bar{height:8px;background:var(--panel2);border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:4px;transition:width .5s}
+.bar.xp i{background:var(--xp)}
+.num{font-variant-numeric:tabular-nums}
+
+/* dashboard */
+.hero{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px}
+@media (max-width:760px){.hero{grid-template-columns:1fr}}
+.lvl{display:flex;flex-direction:column;gap:10px}
+.lvl .name{font:700 22px var(--f-display);color:var(--xp)}
+.stat b{display:block;font:700 26px var(--f-display)}
+.stat span{color:var(--muted);font-size:14px}
+.road{display:flex;flex-direction:column;gap:6px}
+.roadrow{display:grid;grid-template-columns:30px minmax(0,1fr) 64px;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;background:var(--panel2);border:0;color:var(--ink);text-align:left;cursor:pointer;font:inherit}
+.roadrow .n{font:700 13px var(--f-mono);color:var(--muted)}
+.roadrow small{display:block;color:var(--muted);font-size:13px}
+.roadrow .pc{font:600 13px var(--f-mono);text-align:right;color:var(--muted)}
+.roadrow.done .pc{color:var(--good)}
+
+/* paths */
+.path{display:flex;flex-direction:column;gap:12px}
+.pathhead{display:flex;gap:14px;align-items:flex-start}
+.pathno{font:700 15px var(--f-mono);min-width:38px;height:38px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center}
+.rooms{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.room{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px;text-align:left;color:var(--ink);cursor:pointer;font:inherit}
+.room:hover:not(.soon){border-color:var(--accent)}
+.room .meta{display:flex;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.room.soon{cursor:default;opacity:.62}
+.room.done{border-color:var(--good)}
+.tag{display:inline-block;font:600 11.5px var(--f-mono);padding:2px 7px;border-radius:6px;background:var(--bg);color:var(--muted)}
+.tag.Лёгкая{color:var(--good)} .tag.Средняя{color:var(--xp)} .tag.Сложная{color:var(--bad)}
+.tag.soon{color:var(--soon)}
+
+/* room */
+.roomhead{display:flex;flex-direction:column;gap:10px}
+.back{background:none;border:0;color:var(--muted);cursor:pointer;padding:0;font:600 14px var(--f-body);align-self:flex-start}
+.task{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.task>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;padding:14px 18px;font-weight:600}
+.task>summary::-webkit-details-marker{display:none}
+.task>summary .tn{font:700 12px var(--f-mono);color:var(--muted);min-width:76px}
+.task>summary .ok{margin-left:auto;color:var(--good);font-size:14px}
+.task[open]>summary{border-bottom:1px solid var(--line)}
+.tbody{padding:18px;display:flex;flex-direction:column;gap:14px}
+.content{display:flex;flex-direction:column;gap:12px;max-width:70ch}
+.content p,.content li{color:#cfd6e8}
+.content ul,.content ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px}
+.content b{color:var(--ink)}
+.content code{font:13.5px var(--f-mono);background:var(--panel2);padding:1px 6px;border-radius:5px;color:#ffd38a}
+.content pre{font:13.5px/1.5 var(--f-mono);background:#070b16;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:0;overflow-x:auto;color:#cde3ff}
+.content .why{background:var(--accent-soft);border-radius:10px;padding:12px 14px;color:var(--ink)}
+.content .tool-link{color:var(--accent);cursor:pointer;font-weight:600;align-self:flex-start}
+.content .tool-link::before{content:"⚙ "}
+.qs{display:flex;flex-direction:column;gap:12px;border-top:1px dashed var(--line);padding-top:14px}
+.q{display:flex;flex-direction:column;gap:8px}
+.q .qt{font-weight:600}
+.ans{display:flex;gap:8px;flex-wrap:wrap}
+.ans input{flex:1;min-width:180px;font:15px var(--f-mono);background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.ans input.okk{border-color:var(--good);color:var(--good)}
+.ans input.err{border-color:var(--bad);animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.choices{display:flex;flex-direction:column;gap:6px}
+.choice{text-align:left;background:var(--bg);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:10px 12px;cursor:pointer;font:inherit}
+.choice.okk{border-color:var(--good);background:var(--good-soft)}
+.choice.err{border-color:var(--bad);background:var(--bad-soft)}
+.hint{font-size:14px;color:var(--muted)}
+.hintbtn{background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:13.5px;padding:0;align-self:flex-start}
+.solved{font-size:14px;color:var(--good);font-weight:600}
+.feyn textarea{width:100%;min-height:110px;font:15px var(--f-body);background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 12px;resize:vertical}
+.donebanner{background:var(--good-soft);border:1px solid var(--good);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:4px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);opacity:0;background:var(--xp);color:#2a1a00;font-weight:700;padding:10px 18px;border-radius:999px;transition:all .3s;z-index:20;pointer-events:none}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* review */
+.flash{min-height:220px;display:flex;flex-direction:column;gap:14px;justify-content:center;align-items:center;text-align:center;padding:28px}
+.flash .fq{font:600 clamp(18px,3vw,22px)/1.35 var(--f-body);max-width:46ch}
+.flash .fa{color:var(--accent);font-size:17px;max-width:52ch}
+
+/* tools */
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{background:var(--panel2);border:1px solid var(--line);color:var(--muted);padding:7px 12px;border-radius:9px;cursor:pointer;font:600 14px var(--f-body)}
+.tabs button.on{color:var(--bg);background:var(--accent);border-color:var(--accent)}
+.tool{display:flex;flex-direction:column;gap:12px}
+.tool label{font-size:13.5px;color:var(--muted);font-weight:600}
+.tool textarea,.tool input,.tool select{width:100%;font:14px var(--f-mono);background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.tool textarea{min-height:90px;resize:vertical}
+.out{font:14px var(--f-mono);background:#070b16;border:1px solid var(--line);border-radius:10px;padding:12px;white-space:pre-wrap;word-break:break-all;min-height:44px;color:#cde3ff}
+.freq{display:flex;flex-direction:column;gap:3px;font:13px var(--f-mono)}
+.freq div{display:grid;grid-template-columns:22px 1fr 54px;gap:8px;align-items:center}
+.freq i{display:block;height:10px;background:var(--accent);border-radius:3px}
+.method li{color:#cfd6e8}
+.method b{color:var(--ink)}
+.sync{font-size:12.5px;color:var(--muted)}
+
+/* labs, code tasks */
+.lab{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.lab .labhead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.lab label{font-size:13px;color:var(--muted);font-weight:600;display:flex;flex-direction:column;gap:4px;min-width:0}
+.lab input,.lab select,.lab textarea{width:100%;font:14px var(--f-mono);background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:9px;padding:8px 10px;min-width:0}
+.lab textarea{min-height:84px;resize:vertical}
+.lab input[type=range]{padding:0}
+.lgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));gap:8px}
+.lab .out{font-size:13px;min-height:0;padding:10px}
+.lab .btn.ghost{background:var(--bg);border:1px solid var(--line)}
+.lab canvas{width:100%;max-width:380px;aspect-ratio:1;background:#070b16;border:1px solid var(--line);border-radius:10px;touch-action:manipulation;align-self:center}
+.lab .hl{color:var(--xp);font-weight:600}
+.lab .okc{color:var(--good)} .lab .bad{color:var(--bad)}
+.bits{display:grid;grid-template-columns:repeat(32,1fr);gap:1px;max-width:380px}
+.bits i{aspect-ratio:1;background:var(--line);border-radius:1px}
+.bits i.d{background:var(--xp)}
+.hexd{font:12.5px/1.6 var(--f-mono);word-break:break-all;color:#cde3ff}
+.hexd b{color:var(--xp);background:var(--xp-soft);border-radius:2px}
+.mtree{display:flex;flex-direction:column;gap:6px}
+.mrow{display:flex;gap:4px}
+.mnode{flex:1;min-width:0;font:11px var(--f-mono);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:4px 2px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#cde3ff}
+button.mnode{cursor:pointer}
+.mnode.path{border-color:var(--xp);color:var(--xp)} .mnode.sib{border-color:var(--accent);color:var(--accent)} .mnode.root{border-color:var(--good);color:var(--good)}
+.cols3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media (max-width:560px){.cols3{grid-template-columns:1fr}}
+.cols3>div{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;font:12.5px/1.6 var(--f-mono);word-break:break-all}
+.cols3 h4{margin:0 0 4px;font:600 13px var(--f-body)}
+.pbar{display:grid;grid-template-columns:44px 1fr 56px;gap:8px;align-items:center;font:13px var(--f-mono)}
+.pbar i{display:block;height:12px;background:var(--accent);border-radius:3px;transition:width .3s}
+.shares{display:flex;flex-direction:column;gap:4px;font:13px var(--f-mono)}
+.shares label{flex-direction:row;align-items:center;gap:8px;color:var(--ink);font:13px var(--f-mono);word-break:break-all}
+.shares input{width:auto}
+.codetask{display:flex;flex-direction:column;gap:8px}
+.codetask .row{justify-content:space-between}
+.codetask pre{font:13px/1.5 var(--f-mono);background:#070b16;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:0;overflow-x:auto;color:#cde3ff;max-height:420px}
+
+/* badges, daily, ctf */
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(136px,1fr));gap:8px}
+.badge{display:flex;gap:10px;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.badge .bi{font-size:22px;line-height:1}
+.badge b{display:block;font-size:13.5px}
+.badge small{display:block;color:var(--muted);font-size:12px;line-height:1.3}
+.badge.off{opacity:.42;filter:grayscale(1)}
+.badge.on{border-color:var(--xp)}
+.daily{border-color:var(--xp)}
+.daily .qt{font-weight:600}
+.chals{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.chal{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;text-align:left;color:var(--ink);cursor:pointer;font:inherit}
+.chal:hover{border-color:var(--accent)}
+.chal.done{border-color:var(--good)}
+.chal.soon{cursor:default;opacity:.55}
+.chal .pts{font:700 13px var(--f-mono);color:var(--xp)}
+.chal.done .pts{color:var(--good)}
+</style>
+
+<header class="top gut">
+  <div class="wrap topin">
+    <button class="logo" id="logo"><i>⊕</i>CryptoLab</button>
+    <nav class="nav" id="nav" aria-label="Разделы">
+      <button data-v="home">Главная</button>
+      <button data-v="paths">Пути</button>
+      <button data-v="review">Повторение</button>
+      <button data-v="ctf">CTF</button>
+      <button data-v="tools">Инструменты</button>
+      <button data-v="method">Как учиться</button>
+    </nav>
+    <div class="me"><span class="chip fire" id="streak" title="Серия дней">🔥 0</span><span class="chip xp" id="xpchip">0 XP</span></div>
+  </div>
+</header>
+
+<main class="gut"><div class="wrap" id="view"></div></main>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="content.js"></script>
+<script>
+"use strict";
+const LAB = window.LAB;
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+// ---------- SHA-256 (sync) ----------
+const K=new Uint32Array([0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]);
+const enc = new TextEncoder(), dec = new TextDecoder("utf-8",{fatal:false});
+function sha256bytes(m){
+  const l=m.length,nb=(l+9+63)>>6,buf=new Uint8Array(nb*64);
+  buf.set(m);buf[l]=0x80;const dv=new DataView(buf.buffer),bits=l*8;
+  dv.setUint32(buf.length-4,bits>>>0);dv.setUint32(buf.length-8,Math.floor(bits/4294967296));
+  const H=new Uint32Array([0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19]),W=new Uint32Array(64);
+  for(let b=0;b<nb;b++){
+    for(let t=0;t<16;t++)W[t]=dv.getUint32(b*64+t*4);
+    for(let t=16;t<64;t++){const x=W[t-15],y=W[t-2];
+      W[t]=(W[t-16]+(((x>>>7)|(x<<25))^((x>>>18)|(x<<14))^(x>>>3))+W[t-7]+(((y>>>17)|(y<<15))^((y>>>19)|(y<<13))^(y>>>10)))|0;}
+    let a=H[0],c1=H[1],c=H[2],d=H[3],e=H[4],f=H[5],g=H[6],h=H[7];
+    for(let t=0;t<64;t++){
+      const t1=(h+(((e>>>6)|(e<<26))^((e>>>11)|(e<<21))^((e>>>25)|(e<<7)))+((e&f)^(~e&g))+K[t]+W[t])|0;
+      const t2=((((a>>>2)|(a<<30))^((a>>>13)|(a<<19))^((a>>>22)|(a<<10)))+((a&c1)^(a&c)^(c1&c)))|0;
+      h=g;g=f;f=e;e=(d+t1)|0;d=c;c=c1;c1=a;a=(t1+t2)|0;}
+    H[0]+=a;H[1]+=c1;H[2]+=c;H[3]+=d;H[4]+=e;H[5]+=f;H[6]+=g;H[7]+=h;
+  }
+  return Array.from(H,x=>x.toString(16).padStart(8,"0")).join("");
+}
+const sha256 = s => sha256bytes(enc.encode(s));
+const norm = s => String(s).trim().toLowerCase().replace(/\s+/g," ");
+
+// ---------- model ----------
+const XPQ = {"Лёгкая":10,"Средняя":15,"Сложная":20}, ROOM_BONUS = 50;
+const allRooms = () => LAB.paths.flatMap(p => p.rooms.map(id => ({id, ...LAB.rooms[id]})));
+const liveRooms = () => allRooms().filter(r => !r.soon);
+const qsOf = r => r.tasks.flatMap(t => t.qs);
+let S = {v:1, solved:{}, srs:{}, notes:{}, days:[], badges:{}};
+function roomStats(r){ if(r.soon) return {done:0,total:0,pct:0}; const qs=qsOf(r); const done=qs.filter(q=>S.solved[q.id]).length; return {done,total:qs.length,pct:qs.length?Math.round(done/qs.length*100):0}; }
+function xpTotal(){ let xp=0; for(const r of liveRooms()){ const st=roomStats(r); xp+=st.done*(XPQ[r.diff]||10); if(st.total&&st.done===st.total) xp+=ROOM_BONUS; } return xp; }
+function level(xp){ let i=0; LAB.levels.forEach((l,k)=>{ if(xp>=l.xp) i=k; }); const cur=LAB.levels[i], nxt=LAB.levels[i+1]; return {i,cur,nxt,pct:nxt?Math.round((xp-cur.xp)/(nxt.xp-cur.xp)*100):100}; }
+const today = () => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
+function markDay(){ const t=today(); if(!S.days.includes(t)){ S.days.push(t); S.days=S.days.slice(-120); } }
+function streak(){ const set=new Set(S.days); let n=0; const d=new Date(); if(!set.has(today())) d.setDate(d.getDate()-1);
+  for(;;){ const k=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); if(set.has(k)){n++;d.setDate(d.getDate()-1);} else break; } return n; }
+
+// ---------- storage: db per-viewer doc, else localStorage ----------
+const store = { mode:"local", ref:null, pending:false, busy:false, timer:null };
+function loadLocal(){ try{ const raw=localStorage.getItem("cryptolab-progress"); if(raw) S={...S,...JSON.parse(raw)}; }catch(e){} }
+function saveLocal(){ try{ localStorage.setItem("cryptolab-progress", JSON.stringify(S)); }catch(e){} }
+function save(){ saveLocal(); if(store.mode!=="db") return; store.pending=true; clearTimeout(store.timer); store.timer=setTimeout(flush,700); }
+async function flush(){
+  if(store.busy||!store.pending) return; store.busy=true; store.pending=false;
+  try{ await store.ref.set(JSON.parse(JSON.stringify(S))); }
+  catch(e){ if(e&&e.code==="invalid_argument"){ store.mode="local"; renderSync(); } }
+  store.busy=false; if(store.pending) flush();
+}
+function merge(a,b){ // union of two progress states (local + cloud)
+  const out={v:1,solved:{...a.solved,...b.solved},srs:{...a.srs},notes:{...a.notes,...b.notes},days:[...new Set([...(a.days||[]),...(b.days||[])])].sort().slice(-120),badges:{...(a.badges||{}),...(b.badges||{})}};
+  for(const [k,v] of Object.entries(b.srs||{})){ const o=out.srs[k]; if(!o||(v.t||0)>(o.t||0)) out.srs[k]=v; }
+  return out;
+}
+async function initCloud(tries=0){
+  if(!window.claude||!window.claude.use){ if(tries<8) setTimeout(()=>initCloud(tries+1),500); return; }
+  try{
+    const [db,user]=await Promise.all([claude.use("db"),claude.use("user")]);
+    if(!db||!user) return; const uid=await user.id(); if(!uid) return;
+    store.ref=db.doc("data/users/"+uid+"/progress");
+    const snap=await store.ref.get();
+    const cloud=snap.exists?snap.data():null;
+    const before=JSON.stringify(S);
+    if(cloud) S=merge(S, JSON.parse(JSON.stringify(cloud)));
+    store.mode="db"; saveLocal();
+    if(!cloud||JSON.stringify(S)!==JSON.stringify(cloud)){ store.pending=true; flush(); }
+    if(JSON.stringify(S)!==before) render();
+    renderSync();
+  }catch(e){ /* stay local */ }
+}
+function renderSync(){ const el=document.getElementById("sync"); if(el) el.textContent = store.mode==="db" ? "☁ Прогресс сохраняется в твоём аккаунте и виден на всех устройствах." : "Прогресс сохраняется в этом браузере."; }
+
+// ---------- ui helpers ----------
+function toast(t){ const el=$("#toast"); el.textContent=t; el.classList.add("on"); clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove("on"),1800); }
+function header(){ $("#xpchip").textContent=xpTotal()+" XP"; $("#streak").textContent="🔥 "+streak(); }
+let route={v:"home"};
+function go(r){ route=r; try{ history.replaceState(null,"","#"+(r.v==="room"?r.id:r.v)); }catch(e){} render(); window.scrollTo(0,0); }
+document.getElementById("nav").addEventListener("click",e=>{ const b=e.target.closest("button[data-v]"); if(b) go({v:b.dataset.v}); });
+$("#logo").onclick=()=>go({v:"home"});
+
+function render(){
+  checkBadges(true); header();
+  document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on", b.dataset.v===route.v || (route.v==="room"&&b.dataset.v==="paths")));
+  const v=$("#view");
+  if(route.v==="home") v.innerHTML=viewHome();
+  else if(route.v==="paths") v.innerHTML=viewPaths();
+  else if(route.v==="room") { v.innerHTML=viewRoom(route.id); bindRoom(route.id); mountLabs(route.id); focusQ(); }
+  else if(route.v==="review") { v.innerHTML=viewReview(); bindReview(); }
+  else if(route.v==="tools") { v.innerHTML=viewTools(); bindTools(route.tool||"convert"); }
+  else if(route.v==="method") v.innerHTML=viewMethod();
+  else if(route.v==="ctf"){ if(route.id&&LAB.rooms[route.id]&&!LAB.rooms[route.id].soon){ v.innerHTML=viewChallenge(route.id,route.ti); bindQs(route.id); mountLabs(route.id); } else v.innerHTML=viewCtf(); }
+  renderSync();
+}
+document.getElementById("view").addEventListener("click",e=>{
+  const r=e.target.closest("[data-room]"); if(r&&!r.classList.contains("soon")){ go({v:"room",id:r.dataset.room}); return; }
+  const p=e.target.closest("[data-path]"); if(p){ go({v:"paths"}); setTimeout(()=>{ const el=document.getElementById(p.dataset.path); if(el) el.scrollIntoView({behavior:"smooth"}); },50); return; }
+  const t=e.target.closest("[data-tool]"); if(t){ go({v:"tools",tool:t.dataset.tool}); return; }
+  const c=e.target.closest("[data-chal]"); if(c){ const [id,ti]=c.dataset.chal.split(":"); go({v:"ctf",id,ti:+ti}); return; }
+  const dq=e.target.closest("[data-daily]"); if(dq){ const [id,qid]=dq.dataset.daily.split("|"); go({v:"room",id,focus:qid}); return; }
+  const cp=e.target.closest("[data-copy]"); if(cp){ copyCode(cp); return; }
+  const g=e.target.closest("[data-go]"); if(g){ go({v:g.dataset.go}); }
+});
+
+// ---------- views ----------
+function nextRoom(){ return liveRooms().find(r=>{ const s=roomStats(r); return s.done<s.total; }); }
+function viewHome(){
+  const xp=xpTotal(), L=level(xp), live=liveRooms();
+  const solvedQ=Object.keys(S.solved).length, doneRooms=live.filter(r=>{const s=roomStats(r);return s.total&&s.done===s.total;}).length;
+  const nr=nextRoom(), due=dueCards().length;
+  const road=LAB.paths.map((p,i)=>{ const rs=p.rooms.map(id=>({id,...LAB.rooms[id]})); const live=rs.filter(r=>!r.soon);
+    const tot=live.reduce((a,r)=>a+roomStats(r).total,0), dn=live.reduce((a,r)=>a+roomStats(r).done,0);
+    const pc=live.length?Math.round(dn/tot*100)+"%":"скоро";
+    return `<button class="roadrow${tot&&dn===tot?" done":""}" data-path="${p.id}"><span class="n">${String(i).padStart(2,"0")}</span><span>${esc(p.title)}<small>${esc(p.sub)}</small></span><span class="pc">${pc}</span></button>`; }).join("");
+  return `<div class="stack">
+    <div class="hero">
+      <div class="panel lvl">
+        <span class="eyebrow">Твой уровень</span>
+        <span class="name">${esc(L.cur.name)}</span>
+        <div class="bar xp"><i style="width:${L.pct}%"></i></div>
+        <span class="muted num">${xp} XP${L.nxt?` · до уровня «${esc(L.nxt.name)}» ещё ${L.nxt.xp-xp} XP`:" · максимальный уровень"}</span>
+        <div class="row" style="margin-top:6px">${nr?`<button class="btn" data-room="${nr.id}">Продолжить: ${esc(nr.title)}</button>`:`<span class="muted">Все открытые комнаты пройдены. Новые скоро.</span>`}
+        ${due?`<button class="btn ghost" data-go="review">Повторить карточки: ${due}</button>`:""}</div>
+      </div>
+      <div class="panel grid3" style="align-content:center">
+        <div class="stat"><b class="num">${solvedQ}</b><span>задач решено</span></div>
+        <div class="stat"><b class="num">${doneRooms}/${live.length}</b><span>комнат пройдено</span></div>
+        <div class="stat"><b class="num">${streak()}</b><span>дней подряд</span></div>
+      </div>
+    </div>
+    ${dailyHTML()}
+    <div class="panel stack">
+      <div><span class="eyebrow">Дорога к элите</span><h2 style="margin-top:6px">10 путей: от битов до пороговых постквантовых подписей</h2>
+      <p class="muted" style="margin-top:6px">Последний путь — уровень, где в мире всего несколько сотен специалистов. Проходи по порядку: каждый путь опирается на предыдущий.</p></div>
+      <div class="road">${road}</div>
+    </div>
+    ${badgesHTML()}
+    <p class="sync" id="sync"></p>
+  </div>`;
+}
+function roomCard(id){
+  const r={id,...LAB.rooms[id]};
+  if(r.soon) return `<div class="room soon"><span class="tag soon">скоро</span><h3>${esc(r.title)}</h3><span class="muted" style="font-size:14px">${esc(r.about)}</span></div>`;
+  const s=roomStats(r);
+  return `<button class="room${s.done===s.total?" done":""}" data-room="${id}"><div class="meta"><span class="tag ${r.diff}">${r.diff}</span><span>~${r.min} мин</span><span>${r.tasks.length} заданий</span></div><h3>${esc(r.title)}</h3><div class="bar"><i style="width:${s.pct}%"></i></div><span class="muted num" style="font-size:13px">${s.done}/${s.total} ответов</span></button>`;
+}
+function viewPaths(){
+  return `<div class="stack"><div><span class="eyebrow">Карта</span><h1 style="margin-top:6px">Пути обучения</h1></div>`+
+  LAB.paths.map((p,i)=>`<section class="panel path" id="${p.id}"><div class="pathhead"><span class="pathno">${String(i).padStart(2,"0")}</span><div><h2>${esc(p.title)}</h2><p class="muted" style="margin-top:4px">${esc(p.about)}</p></div></div><div class="rooms">${p.rooms.map(roomCard).join("")}</div></section>`).join("")+`</div>`;
+}
+function qHTML(q,hints){
+  const ok=!!S.solved[q.id];
+  const field=q.choices
+    ? `<div class="choices">${q.choices.map((c,ci)=>`<button class="choice" data-q="${q.id}" data-c="${ci}" ${ok?"disabled":""}>${esc(c)}</button>`).join("")}</div>`
+    : `<form class="ans" data-q="${q.id}"><input id="in-${q.id}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${ok?"Решено":"Ответ"}" ${ok?"disabled class=\"okk\"":""}><button class="btn small" ${ok?"disabled":""}>Сдать</button></form>`;
+  return `<div class="q" id="q-${q.id}"><span class="qt">${esc(q.q)}</span>${field}${ok?`<span class="solved">✓ Верно</span>`:(hints&&q.hint?`<button class="hintbtn" data-hint="${q.id}">Подсказка</button><span class="hint" id="h-${q.id}" hidden>${esc(q.hint)}</span>`:"")}</div>`;
+}
+function taskBody(id,t,ti,hints){
+  const lab=t.lab&&LABS[t.lab]?`<div class="lab" data-lab="${esc(t.lab)}" data-key="${id}-${ti}"></div>`:"";
+  const code=t.code?`<div class="codetask"><div class="row"><span class="eyebrow">Код-задание</span><button class="btn small ghost" data-copy>Копировать</button></div><pre>${esc(t.code)}</pre></div>`:"";
+  return `<div class="tbody"><div class="content">${t.body}</div>${lab}${code}<div class="qs">${t.qs.map(q=>qHTML(q,hints)).join("")}</div></div>`;
+}
+function viewRoom(id){
+  const r=LAB.rooms[id]; if(!r||r.soon) return `<p>Комната не найдена.</p>`;
+  const p=LAB.paths.find(x=>x.id===r.path), s=roomStats({id,...r});
+  let firstOpen=r.tasks.findIndex(t=>t.qs.some(q=>!S.solved[q.id]));
+  if(route.focus){ const fi=r.tasks.findIndex(t=>t.qs.some(q=>q.id===route.focus)); if(fi>=0) firstOpen=fi; }
+  const tasks=r.tasks.map((t,ti)=>{
+    const done=t.qs.every(q=>S.solved[q.id]);
+    return `<details class="task" ${ti===(firstOpen<0?-1:firstOpen)?"open":""}><summary><span class="tn">ЗАДАНИЕ ${ti+1}</span><span>${esc(t.t)}</span>${t.ctf?`<span class="tag">CTF</span>`:""}${done?`<span class="ok">✓</span>`:""}</summary>${taskBody(id,t,ti,true)}</details>`;
+  }).join("");
+  const complete=s.done===s.total;
+  return `<div class="stack">
+    <div class="roomhead"><button class="back" data-go="paths">← ${esc(p.title)}</button>
+      <div class="row"><span class="tag ${r.diff}">${r.diff}</span><span class="muted">~${r.min} мин · ${r.tasks.length} заданий</span></div>
+      <h1>${esc(r.title)}</h1><p class="muted" style="max-width:70ch">${esc(r.intro)}</p>
+      <div class="bar"><i style="width:${s.pct}%"></i></div></div>
+    ${complete?`<div class="donebanner"><b>Комната пройдена! +${ROOM_BONUS} XP бонус</b><span class="muted">Её карточки добавлены в «Повторение». Вернись к ним завтра.</span></div>`:""}
+    ${tasks}
+    <div class="panel stack feyn"><span class="eyebrow">Метод Фейнмана</span><h3>${esc(r.explain)}</h3><p class="muted" style="font-size:14px">Напиши так, будто объясняешь другу. Если застрял — значит, тут пробел, перечитай задание. Текст сохраняется.</p><textarea id="feyn" placeholder="Объясняю своими словами...">${esc(S.notes[id]||"")}</textarea></div>
+  </div>`;
+}
+function bindQs(id){
+  const r=LAB.rooms[id];
+  const solve=qid=>{ S.solved[qid]=Date.now(); markDay(); const before=roomStats({id,...r}); save(); const xp=XPQ[r.diff]||10;
+    if(before.done===before.total){ toast(`+${xp} XP · комната пройдена! +${ROOM_BONUS}`); } else toast(`+${xp} XP`);
+    checkBadges(false); const scroll=window.scrollY; render(); window.scrollTo(0,scroll); };
+  document.querySelectorAll("form.ans").forEach(f=>f.addEventListener("submit",e=>{
+    e.preventDefault(); const qid=f.dataset.q, q=qsOf(r).find(x=>x.id===qid), inp=f.querySelector("input");
+    if(!inp.value.trim()) return;
+    if(q.h.includes(sha256(qid+"|"+norm(inp.value)))) solve(qid);
+    else { inp.classList.remove("err"); void inp.offsetWidth; inp.classList.add("err"); }
+  }));
+  document.querySelectorAll(".choice").forEach(b=>b.addEventListener("click",()=>{
+    const qid=b.dataset.q, q=qsOf(r).find(x=>x.id===qid);
+    if(q.h.includes(sha256(qid+"|"+norm(b.dataset.c)))){ b.classList.add("okk"); setTimeout(()=>solve(qid),350); }
+    else b.classList.add("err");
+  }));
+  document.querySelectorAll("[data-hint]").forEach(b=>b.addEventListener("click",()=>{ document.getElementById("h-"+b.dataset.hint).hidden=false; b.remove(); }));
+}
+function bindRoom(id){
+  bindQs(id);
+  const fe=document.getElementById("feyn"); let ft;
+  fe.addEventListener("input",()=>{ clearTimeout(ft); ft=setTimeout(()=>{ S.notes[id]=fe.value.slice(0,4000); save(); checkBadges(false); header(); },800); });
+}
+
+// ---------- spaced repetition (Leitner) ----------
+const BOX_DAYS=[0,1,3,7,16,35];
+function cardPool(){ const out=[]; for(const r of liveRooms()){ const s=roomStats(r); if(!s.done) continue; r.cards.forEach((c,i)=>out.push({id:r.id+"-c"+i, q:c[0], a:c[1], room:r.title})); } return out; }
+function dueCards(){ const now=Date.now(); return cardPool().filter(c=>{ const st=S.srs[c.id]; return !st||st.due<=now; }); }
+let rv={i:0,flip:false,list:[]};
+function viewReview(){
+  rv.list=dueCards().sort(()=>Math.random()-.5); rv.i=0; rv.flip=false;
+  const pool=cardPool().length;
+  return `<div class="stack"><div><span class="eyebrow">Интервальное повторение</span><h1 style="margin-top:6px">Повторение</h1>
+  <p class="muted" style="margin-top:6px;max-width:70ch">Карточки из пройденных комнат. Знал — карточка вернётся позже (через 1, 3, 7, 16, 35 дней). Не знал — вернётся завтра. Так знания переходят в долгую память. Темы перемешаны специально.</p></div>
+  <div class="panel flash" id="flash"></div><p class="muted num" id="rvinfo"></p>
+  ${pool?"":`<p class="muted">Пока карточек нет. Начни любую комнату, и её карточки появятся здесь.</p>`}</div>`;
+}
+function bindReview(){
+  const box=document.getElementById("flash"), info=document.getElementById("rvinfo");
+  const draw=()=>{
+    if(rv.i>=rv.list.length){ box.innerHTML=`<span class="fq">${rv.list.length?"На сегодня всё! 🎉":"Сейчас повторять нечего."}</span><span class="muted">Следующие карточки появятся по расписанию.</span>`; info.textContent=""; return; }
+    const c=rv.list[rv.i];
+    box.innerHTML=`<span class="tag">${esc(c.room)}</span><span class="fq">${esc(c.q)}</span>${rv.flip?`<span class="fa">${esc(c.a)}</span><div class="row"><button class="btn ghost" id="nope">Не знал</button><button class="btn" id="yep">Знал</button></div>`:`<button class="btn" id="show">Показать ответ</button>`}`;
+    info.textContent=`Карточка ${rv.i+1} из ${rv.list.length}`;
+    if(!rv.flip) document.getElementById("show").onclick=()=>{rv.flip=true;draw();};
+    else { document.getElementById("yep").onclick=()=>grade(true); document.getElementById("nope").onclick=()=>grade(false); }
+  };
+  const grade=ok=>{ const c=rv.list[rv.i], st=S.srs[c.id]||{b:0}; const b=ok?Math.min(st.b+1,BOX_DAYS.length-1):1;
+    S.srs[c.id]={b,due:Date.now()+BOX_DAYS[b]*86400000-3600000,t:Date.now()}; markDay(); save(); checkBadges(false); header(); rv.i++; rv.flip=false; draw(); };
+  draw();
+}
+
+// ---------- tools ----------
+const TOOLS=[["convert","Конвертер"],["xor","XOR"],["mod","Модуль"],["caesar","Цезарь"],["vigenere","Виженер"],["freq","Частоты"],["sha","SHA-256"]];
+function viewTools(){ return `<div class="stack"><div><span class="eyebrow">Твой набор взломщика</span><h1 style="margin-top:6px">Инструменты</h1></div><div class="tabs" id="tooltabs">${TOOLS.map(([k,n])=>`<button data-t="${k}">${n}</button>`).join("")}</div><div class="panel tool" id="tool"></div></div>`; }
+const hexToBytes=h=>{ h=h.replace(/^0x/i,"").replace(/[^0-9a-f]/gi,""); if(h.length%2) h="0"+h; const out=new Uint8Array(h.length/2); for(let i=0;i<out.length;i++) out[i]=parseInt(h.substr(i*2,2),16); return out; };
+const bytesToHex=b=>Array.from(b,x=>x.toString(16).padStart(2,"0")).join("");
+const b64enc=b=>{ let s=""; b.forEach(x=>s+=String.fromCharCode(x)); return btoa(s); };
+const b64dec=s=>{ const bin=atob(s.replace(/\s+/g,"")); return Uint8Array.from(bin,c=>c.charCodeAt(0)); };
+const printable=b=>Array.from(b,x=>x>=32&&x<127?String.fromCharCode(x):"·").join("");
+function scoreEn(b){ const f="etaoin shrdlu"; let s=0; for(const x of b){ const c=String.fromCharCode(x).toLowerCase(); const i=f.indexOf(c); if(i>=0) s+=13-i; else if(x<32&&x!==10||x>126) s-=20; } return s; }
+function bindTools(which){
+  const tabs=document.getElementById("tooltabs"), box=document.getElementById("tool");
+  const show=k=>{ route.tool=k; tabs.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.t===k)); box.innerHTML=TOOLHTML[k]; TOOLJS[k](); };
+  tabs.onclick=e=>{ const b=e.target.closest("button[data-t]"); if(b) show(b.dataset.t); };
+  show(which);
+}
+const TOOLHTML={
+  convert:`<label for="cv-in">Вход</label><textarea id="cv-in">hi</textarea><label for="cv-mode">Что сделать</label><select id="cv-mode"><option value="t2h">текст → hex</option><option value="h2t">hex → текст</option><option value="t2b">текст → Base64</option><option value="b2t">Base64 → текст</option><option value="h2b">hex → Base64</option><option value="b2h">Base64 → hex</option><option value="t2bin">текст → двоичный</option><option value="n2all">число → hex / двоичный</option></select><label>Результат</label><div class="out" id="cv-out"></div>`,
+  xor:`<label for="x-in">Данные (hex)</label><textarea id="x-in">3c363b3d2122352805332905283f2c3f28293338363f27</textarea><label for="x-key">Ключ (hex, повторяется по кругу)</label><input id="x-key" value="5a"><label>Результат: hex и текст</label><div class="out" id="x-out"></div><button class="btn ghost" id="x-brute">Перебрать все 256 однобайтовых ключей</button><div class="out" id="x-brute-out" hidden></div><p class="muted" style="font-size:14px">Подсказка: чтобы зашифровать текст, сначала переведи его в hex в «Конвертере».</p>`,
+  mod:`<div class="grid3"><div><label for="m-a">a</label><input id="m-a" value="7"></div><div><label for="m-b">b (степень)</label><input id="m-b" value="5"></div><div><label for="m-n">n (модуль)</label><input id="m-n" value="13"></div></div><label>Результаты (работает с огромными числами)</label><div class="out" id="m-out"></div>`,
+  caesar:`<label for="c-in">Текст</label><textarea id="c-in">WKH TXLFN EURZQ IRA</textarea><label for="c-k">Сдвиг: <span id="c-kv">3</span></label><input id="c-k" type="range" min="0" max="25" value="23"><label>Результат</label><div class="out" id="c-out"></div><button class="btn ghost" id="c-all">Показать все 25 сдвигов</button><div class="out" id="c-allout" hidden></div>`,
+  vigenere:`<label for="v-in">Текст (латиница)</label><textarea id="v-in">ATTACKATDAWN</textarea><label for="v-key">Ключ</label><input id="v-key" value="LEMON"><label>Зашифровать</label><div class="out" id="v-enc"></div><label>Расшифровать</label><div class="out" id="v-dec"></div>`,
+  freq:`<label for="f-in">Шифротекст</label><textarea id="f-in">aol rlf pz opkklu pu wshpu zpnoa</textarea><label>Частоты букв (англ. эталон: E 12.7%, T 9.1%, A 8.2%, O 7.5%)</label><div class="freq" id="f-out"></div>`,
+  sha:`<label for="s-in">Текст</label><textarea id="s-in">hello</textarea><label>SHA-256</label><div class="out" id="s-out"></div><p class="muted" style="font-size:14px">Поменяй одну букву и посмотри, как меняется весь отпечаток.</p>`
+};
+const TOOLJS={
+  convert(){ const i=$("#cv-in"),m=$("#cv-mode"),o=$("#cv-out"); const run=()=>{ const s=i.value; let r;
+    try{ switch(m.value){
+      case"t2h": r=bytesToHex(enc.encode(s)); break;
+      case"h2t": r=dec.decode(hexToBytes(s)); break;
+      case"t2b": r=b64enc(enc.encode(s)); break;
+      case"b2t": r=dec.decode(b64dec(s)); break;
+      case"h2b": r=b64enc(hexToBytes(s)); break;
+      case"b2h": r=bytesToHex(b64dec(s)); break;
+      case"t2bin": r=Array.from(enc.encode(s),x=>x.toString(2).padStart(8,"0")).join(" "); break;
+      case"n2all": { const n=BigInt(s.trim()); r="dec: "+n.toString()+"\nhex: 0x"+n.toString(16)+"\nbin: 0b"+n.toString(2); } }
+    }catch(e){ r="Не получилось разобрать вход. Проверь формат."; } o.textContent=r; };
+    i.oninput=run; m.onchange=run; run(); },
+  xor(){ const i=$("#x-in"),k=$("#x-key"),o=$("#x-out"); const run=()=>{ const d=hexToBytes(i.value),key=hexToBytes(k.value); if(!key.length||!d.length){o.textContent="Нужны данные и ключ в hex.";return;}
+      const r=d.map((x,j)=>x^key[j%key.length]); o.textContent="hex:   "+bytesToHex(r)+"\nтекст: "+printable(r); };
+    i.oninput=run; k.oninput=run; run();
+    $("#x-brute").onclick=()=>{ const d=hexToBytes(i.value); const res=[]; for(let kk=0;kk<256;kk++){ const r=d.map(x=>x^kk); res.push({kk,s:scoreEn(r),t:printable(r)}); }
+      res.sort((a,b)=>b.s-a.s); const out=$("#x-brute-out"); out.hidden=false; out.textContent="Лучшие варианты (по похожести на английский):\n"+res.slice(0,8).map(x=>"0x"+x.kk.toString(16).padStart(2,"0")+"  "+x.t).join("\n"); }; },
+  mod(){ const a=$("#m-a"),b=$("#m-b"),n=$("#m-n"),o=$("#m-out");
+    const pw=(x,e,m)=>{ let r=1n; x%=m; if(x<0n)x+=m; while(e>0n){ if(e&1n) r=r*x%m; x=x*x%m; e>>=1n; } return r; };
+    const g=(x,y)=>{ x=x<0n?-x:x; y=y<0n?-y:y; while(y){ [x,y]=[y,x%y]; } return x; };
+    const inv=(x,m)=>{ let [r0,r1]=[((x%m)+m)%m,m],[s0,s1]=[1n,0n]; while(r1){ const q=r0/r1; [r0,r1]=[r1,r0-q*r1]; [s0,s1]=[s1,s0-q*s1]; } return r0===1n?((s0%m)+m)%m:null; };
+    const run=()=>{ try{ const A=BigInt(a.value.trim()),B=BigInt(b.value.trim()),N=BigInt(n.value.trim()); if(N<=0n) throw 0;
+      const iv=inv(A,N); o.textContent=`a mod n        = ${((A%N)+N)%N}\na^b mod n      = ${B>=0n?pw(A,B,N):"степень должна быть ≥ 0"}\ngcd(a, n)      = ${g(A,N)}\na⁻¹ mod n      = ${iv===null?"не существует (gcd ≠ 1)":iv}\n(a + b) mod n  = ${(((A+B)%N)+N)%N}\n(a · b) mod n  = ${(((A*B)%N)+N)%N}`;
+    }catch(e){ o.textContent="Введи целые числа, n > 0."; } };
+    [a,b,n].forEach(x=>x.oninput=run); run(); },
+  caesar(){ const i=$("#c-in"),k=$("#c-k"),kv=$("#c-kv"),o=$("#c-out");
+    const sh=(s,d)=>s.replace(/[a-z]/gi,c=>{ const B=c<="Z"?65:97; return String.fromCharCode((c.charCodeAt(0)-B+d+26)%26+B); });
+    const run=()=>{ kv.textContent=k.value+" (расшифровка сдвигом "+((26-k.value)%26)+")"; o.textContent=sh(i.value,+k.value); };
+    i.oninput=run; k.oninput=run; run();
+    $("#c-all").onclick=()=>{ const out=$("#c-allout"); out.hidden=false; out.textContent=Array.from({length:25},(_,j)=>"сдвиг "+String(j+1).padStart(2," ")+" назад: "+sh(i.value,26-(j+1))).join("\n"); }; },
+  vigenere(){ const i=$("#v-in"),k=$("#v-key");
+    const run=()=>{ const key=k.value.toUpperCase().replace(/[^A-Z]/g,""); const t=i.value.toUpperCase().replace(/[^A-Z]/g,"");
+      if(!key){ $("#v-enc").textContent=$("#v-dec").textContent="Нужен ключ из латинских букв."; return; }
+      const f=s=>[...t].map((c,j)=>String.fromCharCode((c.charCodeAt(0)-65+s*(key.charCodeAt(j%key.length)-65)+26)%26+65)).join("");
+      $("#v-enc").textContent=f(1); $("#v-dec").textContent=f(-1); };
+    i.oninput=run; k.oninput=run; run(); },
+  freq(){ const i=$("#f-in"),o=$("#f-out"); const run=()=>{ const c={}; let n=0; for(const ch of i.value.toLowerCase()) if(/[a-zа-яё]/.test(ch)){ c[ch]=(c[ch]||0)+1; n++; }
+      const rows=Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,26); const mx=rows.length?rows[0][1]:1;
+      o.innerHTML=rows.length?rows.map(([ch,v])=>`<div><span>${esc(ch)}</span><i style="width:${v/mx*100}%"></i><span>${(v/n*100).toFixed(1)}%</span></div>`).join(""):`<span class="muted">Вставь текст.</span>`; };
+    i.oninput=run; run(); },
+  sha(){ const i=$("#s-in"),o=$("#s-out"); const run=()=>o.textContent=sha256(i.value); i.oninput=run; run(); }
+};
+
+// ---------- achievements (derived from progress; S.badges only remembers when each was first earned) ----------
+const dayKey = d => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+function bestStreak(){ const ds=[...new Set(S.days)].sort(); let best=0,run=0,prev=null;
+  for(const d of ds){ const t=Date.parse(d+"T12:00:00"); run=(prev!==null&&Math.round((t-prev)/86400000)===1)?run+1:1; prev=t; if(run>best) best=run; } return best; }
+const roomDone = r => { if(r.soon) return false; const s=roomStats(r); return s.total>0&&s.done===s.total; };
+function ctfQids(){ const ids=[]; for(const p of LAB.paths) for(const id of p.rooms){ const r=LAB.rooms[id]; if(r.soon) continue; r.tasks.forEach(t=>{ if(p.id==="pctf"||t.ctf) t.qs.forEach(q=>ids.push(q.id)); }); } return ids; }
+function badgeStats(){
+  const live=liveRooms(), done=live.filter(roomDone);
+  return { q:Object.keys(S.solved).length, rooms:done.length, hard:done.some(r=>r.diff==="Сложная"),
+    paths:LAB.paths.filter(p=>p.rooms.length&&p.rooms.every(id=>roomDone({id,...LAB.rooms[id]}))).length,
+    streak:Math.max(bestStreak(),streak()), rev:Object.keys(S.srs).length,
+    feyn:Object.values(S.notes).filter(t=>String(t).trim().length>=80).length, ctf:ctfQids().filter(id=>S.solved[id]).length };
+}
+const BADGES=[
+  ["first","🚩","Первый флаг","Реши первую задачу",s=>s.q>=1],
+  ["q10","🔟","Десятка","10 флагов",s=>s.q>=10],
+  ["q50","🎯","Полсотни","50 флагов",s=>s.q>=50],
+  ["q100","💯","Сотня","100 флагов",s=>s.q>=100],
+  ["room1","🚪","Первая комната","Пройди комнату целиком",s=>s.rooms>=1],
+  ["room5","🏰","Пять комнат","Пройди 5 комнат",s=>s.rooms>=5],
+  ["hard","🧗","Высота","Пройди сложную комнату",s=>s.hard],
+  ["path1","🗺️","Путь пройден","Пройди целый путь",s=>s.paths>=1],
+  ["st3","🔥","Разогрев","3 дня подряд",s=>s.streak>=3],
+  ["st7","⚡","Неделя огня","7 дней подряд",s=>s.streak>=7],
+  ["st30","🌋","Месяц огня","30 дней подряд",s=>s.streak>=30],
+  ["rev30","🧠","Память","30 карточек повторено",s=>s.rev>=30],
+  ["feyn3","🗣️","Фейнман","3 объяснения своими словами",s=>s.feyn>=3],
+  ["ctf1","🏴","Первая кровь","Первый CTF-флаг",s=>s.ctf>=1]
+];
+function checkBadges(silent){
+  S.badges=S.badges||{}; const st=badgeStats();
+  const fresh=BADGES.filter(b=>!S.badges[b[0]]&&b[4](st)); if(!fresh.length) return;
+  fresh.forEach(b=>S.badges[b[0]]=Date.now()); save();
+  if(!silent) fresh.forEach((b,i)=>setTimeout(()=>toast(b[1]+" Достижение: "+b[2]),1900*(i+1)));
+}
+function badgesHTML(){
+  const n=BADGES.filter(b=>S.badges[b[0]]).length;
+  return `<div class="panel stack"><div class="row" style="justify-content:space-between"><span class="eyebrow">Достижения</span><span class="muted num">${n}/${BADGES.length}</span></div>
+  <div class="badges">${BADGES.map(b=>`<div class="badge ${S.badges[b[0]]?"on":"off"}"><span class="bi">${b[1]}</span><span><b>${esc(b[2])}</b><small>${esc(b[3])}</small></span></div>`).join("")}</div></div>`;
+}
+
+// ---------- task of the day: deterministic by date, from paths up to the current one ----------
+function dailyQ(){
+  const nr=nextRoom(), pi=nr?LAB.paths.findIndex(p=>p.rooms.includes(nr.id)):LAB.paths.length;
+  const allowed=new Set(LAB.paths.slice(0,pi+1).flatMap(p=>p.rooms)), t=today(), pool=[];
+  for(const r of liveRooms()){ if(!allowed.has(r.id)) continue;
+    r.tasks.forEach((tk,ti)=>tk.qs.forEach(q=>{ const sv=S.solved[q.id], solvedToday=!!sv&&dayKey(new Date(sv))===t;
+      if(!sv||solvedToday) pool.push({r,tk,ti,q,solvedToday,k:sha256(t+"|"+q.id)}); })); }
+  pool.sort((a,b)=>a.k<b.k?-1:a.k>b.k?1:0); return pool[0]||null;
+}
+function dailyHTML(){
+  const d=dailyQ(); if(!d) return "";
+  return `<div class="panel stack daily"><div class="row" style="justify-content:space-between"><span class="eyebrow" style="color:var(--xp)">Задача дня</span><span class="tag">${esc(d.r.title)}</span></div>
+  <span class="qt">${esc(d.q.q)}</span><span class="muted" style="font-size:14px">Из задания «${esc(d.tk.t)}». Новая задача — завтра.</span>
+  <div class="row">${d.solvedToday?`<span class="solved">✓ Решена сегодня</span>`:`<button class="btn" data-daily="${d.r.id}|${d.q.id}">Решить</button>`}</div></div>`;
+}
+function focusQ(){
+  if(!route.focus) return; const qid=route.focus; delete route.focus;
+  setTimeout(()=>{ const el=document.getElementById("q-"+qid); if(!el) return; el.scrollIntoView({block:"center"});
+    const inp=el.querySelector("input"); if(inp&&!inp.disabled) inp.focus({preventScroll:true}); },60);
+}
+
+// ---------- code tasks ----------
+function copyCode(btn){
+  const pre=btn.closest(".codetask").querySelector("pre"), txt=pre.textContent;
+  const fallback=()=>{ const rg=document.createRange(); rg.selectNodeContents(pre); const sl=getSelection(); sl.removeAllRanges(); sl.addRange(rg);
+    let ok=false; try{ ok=document.execCommand("copy"); }catch(e){} toast(ok?"Код скопирован":"Код выделен — нажми Ctrl+C"); };
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(()=>toast("Код скопирован"),fallback); else fallback();
+}
+
+// ---------- CTF board ----------
+function ctfItems(){
+  const out=[];
+  for(const p of LAB.paths) for(const id of p.rooms){ const r={id,...LAB.rooms[id]};
+    if(p.id==="pctf"){ if(r.soon) out.push({soon:true,r,arena:true}); else r.tasks.forEach((t,ti)=>out.push({r,t,ti,arena:true})); }
+    else if(!r.soon) r.tasks.forEach((t,ti)=>{ if(t.ctf) out.push({r,t,ti}); }); }
+  return out;
+}
+function chalCard(it){
+  if(it.soon) return `<div class="chal soon"><div class="row"><span class="tag soon">скоро</span></div><h3>${esc(it.r.title)}</h3><span class="muted" style="font-size:13px">${esc(it.r.about||"")}</span></div>`;
+  const {r,t,ti}=it, dn=t.qs.filter(q=>S.solved[q.id]).length, done=dn===t.qs.length, pts=t.qs.length*(XPQ[r.diff]||10);
+  return `<button class="chal${done?" done":""}" data-chal="${r.id}:${ti}"><div class="row" style="justify-content:space-between"><span class="tag ${r.diff}">${r.diff}</span><span class="pts">${done?"✓ ":""}${pts}</span></div><h3>${esc(t.t)}</h3><span class="muted" style="font-size:13px">${esc(r.title)} · ${dn}/${t.qs.length} флагов</span></button>`;
+}
+function viewCtf(){
+  const items=ctfItems(), live=items.filter(i=>!i.soon), qs=live.flatMap(i=>i.t.qs.map(q=>({q,r:i.r})));
+  const solved=qs.filter(x=>S.solved[x.q.id]), pts=solved.reduce((a,x)=>a+(XPQ[x.r.diff]||10),0);
+  const arena=items.filter(i=>i.arena), rest=items.filter(i=>!i.arena);
+  return `<div class="stack"><div><span class="eyebrow">Без подсказок</span><h1 style="margin-top:6px">CTF-доска</h1>
+  <p class="muted" style="margin-top:6px;max-width:70ch">Только условие и флаг. Подсказок нет — как на настоящих соревнованиях. Застрял — вернись к комнате по теме.</p></div>
+  <div class="panel grid3"><div class="stat"><b class="num">${solved.length}/${qs.length}</b><span>флагов</span></div><div class="stat"><b class="num">${pts}</b><span>очков</span></div><div class="stat"><b class="num">${live.filter(i=>i.t.qs.every(q=>S.solved[q.id])).length}/${live.length}</b><span>задач закрыто</span></div></div>
+  ${arena.length?`<section class="panel stack"><h2>Арена</h2><div class="chals">${arena.map(chalCard).join("")}</div></section>`:""}
+  ${rest.length?`<section class="panel stack"><h2>Флаги из комнат</h2><div class="chals">${rest.map(chalCard).join("")}</div></section>`:""}
+  ${items.length?"":`<p class="muted">CTF-задачи скоро появятся.</p>`}</div>`;
+}
+function viewChallenge(id,ti){
+  const r=LAB.rooms[id], t=r.tasks[ti]; if(!t) return viewCtf();
+  const done=t.qs.every(q=>S.solved[q.id]), arena=r.path==="pctf";
+  return `<div class="stack"><div class="roomhead"><button class="back" data-go="ctf">← CTF-доска</button>
+    <div class="row"><span class="tag ${r.diff}">${r.diff}</span><span class="muted">${esc(r.title)} · ${t.qs.length*(XPQ[r.diff]||10)} очков</span></div>
+    <h1>${esc(t.t)}</h1>${done?`<span class="solved">✓ Задача закрыта</span>`:""}
+    ${arena?"":`<button class="back" data-room="${id}">Тема: комната «${esc(r.title)}» →</button>`}</div>
+    <div class="task">${taskBody(id,t,ti,false)}</div></div>`;
+}
+
+// ---------- labs ----------
+const labCache=new Map(); let labCacheRoom=null;
+function mountLabs(rid){
+  if(labCacheRoom!==rid){ labCache.clear(); labCacheRoom=rid; }
+  document.querySelectorAll(".lab[data-lab]").forEach(ph=>{
+    const key=ph.dataset.key, old=labCache.get(key); if(old){ ph.replaceWith(old); return; }
+    const t=LAB.rooms[rid].tasks[+key.slice(key.lastIndexOf("-")+1)];
+    try{ LABS[ph.dataset.lab](ph, t.labArgs||{}); }catch(e){ ph.innerHTML=`<span class="muted">Лаборатория не загрузилась.</span>`; console.error(e); }
+    ph.removeAttribute("data-lab"); labCache.set(key,ph);
+  });
+}
+const labShell=(el,title,html)=>{ el.innerHTML=`<div class="labhead"><span class="eyebrow">Лаборатория</span><b>${title}</b></div>`+html; return s=>el.querySelector(s); };
+const bmod=(a,m)=>((a%m)+m)%m;
+const bpow=(x,e,m)=>{ let r=1n; x=bmod(x,m); while(e>0n){ if(e&1n) r=r*x%m; x=x*x%m; e>>=1n; } return r; };
+const bgcd=(a,b)=>{ a=a<0n?-a:a; b=b<0n?-b:b; while(b){ [a,b]=[b,a%b]; } return a; };
+const binv=(x,m)=>{ let [r0,r1]=[bmod(x,m),m],[s0,s1]=[1n,0n]; while(r1){ const q=r0/r1; [r0,r1]=[r1,r0-q*r1]; [s0,s1]=[s1,s0-q*s1]; } return r0===1n?bmod(s0,m):null; };
+const SMALLP=[2n,3n,5n,7n,11n,13n,17n,19n,23n,29n,31n,37n];
+function bprime(n){ if(n<2n) return false; for(const p of SMALLP){ if(n===p) return true; if(n%p===0n) return false; }
+  let d=n-1n,s=0; while(!(d&1n)){ d>>=1n; s++; }
+  for(const a of SMALLP){ let x=bpow(a,d,n); if(x===1n||x===n-1n) continue; let c=false; for(let i=1;i<s;i++){ x=x*x%n; if(x===n-1n){ c=true; break; } } if(!c) return false; } return true; }
+const BI=v=>{ try{ const t=String(v).trim(); return t?BigInt(t):null; }catch(e){ return null; } };
+const randBig=m=>{ const a=new Uint8Array(Math.ceil(m.toString(16).length/2)+8); crypto.getRandomValues(a); return BigInt("0x"+bytesToHex(a))%m; };
+const hexBits=h=>Array.from(h,c=>parseInt(c,16).toString(2).padStart(4,"0")).join("");
+function canvasCtx(cv){ const W=360, dpr=Math.min(window.devicePixelRatio||1,3); cv.width=W*dpr; cv.height=W*dpr; const g=cv.getContext("2d"); g.setTransform(dpr,0,0,dpr,0,0); return {g,W}; }
+const canvasXY=(cv,e)=>{ const b=cv.getBoundingClientRect(); return [(e.clientX-b.left)*360/b.width,(e.clientY-b.top)*360/b.height]; };
+const tok=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const LABS={
+  avalanche(el,a){
+    const q=labShell(el,"Лавинный эффект SHA-256",`<div class="lgrid"><label>Вход A<input data-a value="${esc(a.a??"hello")}"></label><label>Вход B<input data-b value="${esc(a.b??"hellp")}"></label></div>
+      <div class="out"><div class="hexd" data-ha></div><div class="hexd" data-hb style="margin-top:6px"></div></div><div class="bits" data-bits></div><span data-cnt></span>`);
+    const run=()=>{ const ha=sha256(q("[data-a]").value), hb=sha256(q("[data-b]").value), ba=hexBits(ha), bb=hexBits(hb);
+      const mark=(h,o)=>Array.from(h,(c,i)=>c===o[i]?c:`<b>${c}</b>`).join("");
+      q("[data-ha]").innerHTML="A: "+mark(ha,hb); q("[data-hb]").innerHTML="B: "+mark(hb,ha);
+      let n=0; q("[data-bits]").innerHTML=Array.from(ba,(c,i)=>{ const d=c!==bb[i]; if(d) n++; return `<i${d?' class="d"':""}></i>`; }).join("");
+      q("[data-cnt]").innerHTML=`Отличается <span class="hl">${n} из 256 бит</span> (${(n/2.56).toFixed(1)}%). У хорошего хэша — около половины.`; };
+    el.querySelectorAll("input").forEach(i=>i.oninput=run); run();
+  },
+  birthday(el,a){
+    const q=labShell(el,"Атака дней рождения",`<div class="lgrid"><label>Длина хэша, бит<input data-n type="number" min="8" max="28" value="${a.bits||16}"></label></div>
+      <div class="row"><button class="btn small" data-go1>Искать коллизию</button><button class="btn small ghost" data-go10>10 раз</button></div><div class="out" data-o>Берём случайные строки, обрезаем SHA-256 до N бит и ждём, пока два отпечатка совпадут.</div><span data-h class="muted" style="font-size:13.5px"></span>`);
+    const runs=[];
+    const once=N=>{ const seen=new Map(), mask=N; let i=0;
+      for(;;){ i++; const m="msg-"+Math.random().toString(36).slice(2,10), h=parseInt(sha256(m).slice(0,8),16)>>>(32-mask);
+        const o=seen.get(h); if(o!==undefined&&o!==m) return {i,m1:o,m2:m,h}; seen.set(h,m); } };
+    const go=k=>{ let N=Math.round(+q("[data-n]").value)||16; N=Math.min(28,Math.max(8,N)); q("[data-n]").value=N; let last;
+      for(let j=0;j<k;j++){ last=once(N); runs.push(last.i); }
+      const exp=Math.sqrt(2**N), avg=runs.reduce((x,y)=>x+y,0)/runs.length;
+      q("[data-o]").innerHTML=`Коллизия за <span class="hl">${last.i}</span> попыток:\n«${esc(last.m1)}» и «${esc(last.m2)}»\nобе дают ${N}-битный отпечаток ${last.h.toString(16)}\n\n√(2^${N}) = ${Math.round(exp)}   ·   всего вариантов 2^${N} = ${(2**N).toLocaleString("ru")}`;
+      q("[data-h]").textContent=`Запусков: ${runs.length}, в среднем ${Math.round(avg)} попыток ≈ ${(avg/exp).toFixed(2)}·√(2^N). Теория: ≈1.25·√(2^N).`; };
+    q("[data-n]").onchange=()=>{ runs.length=0; q("[data-h]").textContent=""; };
+    q("[data-go1]").onclick=()=>go(1); q("[data-go10]").onclick=()=>go(10);
+  },
+  merkle(el,a){
+    const q=labShell(el,"Дерево Меркла",`<label>Листья, по одному в строке<textarea data-l>${esc((a.leaves||["tx1","tx2","tx3","tx4"]).join("\n"))}</textarea></label>
+      <span class="muted" style="font-size:13px">Лист = SHA-256(текст). Родитель = SHA-256(левый hex + правый hex). Нечётный узел дублируется. Нажми на лист, чтобы увидеть доказательство.</span>
+      <div class="mtree" data-t></div><div class="out" data-o></div>`);
+    let sel=-1, levels=[];
+    const build=()=>{ const ls=q("[data-l]").value.split("\n").map(s=>s.trim()).filter(Boolean).slice(0,16);
+      levels=[ls.map(sha256)]; if(!ls.length){ q("[data-t]").innerHTML=""; q("[data-o]").textContent="Добавь хотя бы один лист."; return; }
+      while(levels[0].length>1){ const lv=levels[0], up=[]; for(let i=0;i<lv.length;i+=2) up.push(sha256(lv[i]+(lv[i+1]??lv[i]))); levels.unshift(up); }
+      if(sel>=ls.length) sel=-1; draw(ls); };
+    const draw=ls=>{ const D=levels.length-1, path=new Set(), sib=new Set(), steps=[];
+      if(sel>=0){ let i=sel; for(let d=D;d>0;d--){ path.add(d+":"+i); const s=i^1, has=s<levels[d].length; sib.add(d+":"+(has?s:i));
+          steps.push(`${i%2?"слева":"справа"}: ${levels[d][has?s:i]}`); i>>=1; } }
+      q("[data-t]").innerHTML=levels.map((lv,d)=>`<div class="mrow">${lv.map((h,i)=>{ const k=d+":"+i, cls=d===0?"root":path.has(k)?"path":sib.has(k)?"sib":"";
+          return d===D?`<button class="mnode ${cls}" data-i="${i}" title="${esc(ls[i])}">${esc(ls[i])}</button>`:`<span class="mnode ${cls}" title="${h}">${h.slice(0,6)}</span>`; }).join("")}</div>`).join("");
+      q("[data-o]").innerHTML=`Корень: <span class="hl">${levels[0][0]}</span>`+(sel>=0?`\n\nДоказательство для «${esc(ls[sel])}» (хэшей в доказательстве: ${steps.length}, листьев: ${ls.length}):\n`+steps.map((s,j)=>`${j+1}) сосед ${s}`).join("\n"):""); };
+    q("[data-t]").onclick=e=>{ const b=e.target.closest("[data-i]"); if(!b) return; sel=+b.dataset.i===sel?-1:+b.dataset.i; build(); };
+    q("[data-l]").oninput=build; build();
+  },
+  pow(el,a){
+    const q=labShell(el,"Майнинг (Proof of Work)",`<div class="lgrid"><label style="grid-column:1/-1">Данные блока<input data-d value="${esc(a.data??"Алиса → Боб: 5 BTC")}"></label><label>Нулей в начале<select data-z>${[1,2,3,4,5,6].map(z=>`<option${z===(a.zeros||3)?" selected":""}>${z}</option>`).join("")}</select></label></div>
+      <div class="row"><button class="btn small" data-go>Майнить</button><button class="btn small ghost" data-stop disabled>Стоп</button></div>
+      <div class="out" data-o>Ищем nonce, чтобы SHA-256(данные + nonce) начинался с нужного числа нулей.</div>`);
+    let run=null;
+    const stop=()=>{ run=null; q("[data-go]").disabled=false; q("[data-stop]").disabled=true; };
+    q("[data-stop]").onclick=stop;
+    q("[data-go]").onclick=()=>{ const d=q("[data-d]").value, z=+q("[data-z]").value, pre="0".repeat(z), t0=performance.now(), me={}; run=me; let n=0;
+      q("[data-go]").disabled=true; q("[data-stop]").disabled=false;
+      const step=()=>{ if(run!==me) return; if(!el.isConnected&&!labCache.has(el.dataset.key)) return stop();
+        const end=n+3000; for(;n<end;n++){ const h=sha256(d+n); if(h.startsWith(pre)){
+            const s=(performance.now()-t0)/1000; q("[data-o]").innerHTML=`Найдено! nonce = <span class="hl">${n}</span>\nSHA-256("${esc(d)}${n}") =\n<span class="okc">${pre}</span>${h.slice(z)}\n\nПопыток: ${(n+1).toLocaleString("ru")} (в среднем нужно 16^${z} = ${(16**z).toLocaleString("ru")})\nВремя: ${s.toFixed(2)} с`; stop(); return; } }
+        const s=(performance.now()-t0)/1000; q("[data-o]").textContent=`nonce = ${n.toLocaleString("ru")} …\n${sha256(d+n)}\n${Math.round(n/Math.max(s,.001)).toLocaleString("ru")} хэшей/с`; setTimeout(step,0); };
+      step(); };
+  },
+  rsa(el,a){
+    const q=labShell(el,"RSA вручную",`<div class="lgrid"><label>p<input data-p value="${a.p??61}"></label><label>q<input data-q value="${a.q??53}"></label><label>e<input data-e value="${a.e??17}"></label><label>Сообщение m<input data-m value="${a.m??65}"></label></div>
+      <div class="out" data-o></div>`);
+    const run=()=>{ const p=BI(q("[data-p]").value), qq=BI(q("[data-q]").value), e=BI(q("[data-e]").value), m=BI(q("[data-m]").value), o=q("[data-o]");
+      if(p===null||qq===null||e===null||m===null){ o.textContent="Введи целые числа."; return; }
+      const warn=[]; if(!bprime(p)) warn.push("p не простое"); if(!bprime(qq)) warn.push("q не простое"); if(p===qq) warn.push("p = q — так нельзя");
+      const n=p*qq, phi=(p-1n)*(qq-1n), d=binv(e,phi);
+      let s=`n = p·q = ${n}\nφ(n) = (p−1)(q−1) = ${phi}\n`;
+      if(warn.length) s+=`⚠ ${warn.join(", ")}\n`;
+      if(d===null){ o.innerHTML=esc(s)+`<span class="bad">gcd(e, φ) = ${bgcd(e,phi)} ≠ 1 — d не существует, выбери другое e.</span>`; return; }
+      s+=`d = e⁻¹ mod φ = ${d}\nОткрытый ключ: (n=${n}, e=${e})\nСекретный ключ: d=${d}\n\n`;
+      if(m<0n||m>=n){ o.innerHTML=esc(s)+`<span class="bad">Нужно 0 ≤ m < n.</span>`; return; }
+      const c=bpow(m,e,n), back=bpow(c,d,n), sg=bpow(m,d,n), ver=bpow(sg,e,n);
+      o.innerHTML=esc(s)+`Шифр:     c = m^e mod n = <span class="hl">${c}</span>\nРасшифр.: c^d mod n = ${back} ${back===m?'<span class="okc">✓</span>':'<span class="bad">✗</span>'}\nПодпись:  s = m^d mod n = <span class="hl">${sg}</span>\nПроверка: s^e mod n = ${ver} ${ver===m?'<span class="okc">✓ подпись верна</span>':'<span class="bad">✗</span>'}`; };
+    el.querySelectorAll("input").forEach(i=>i.oninput=run); run();
+  },
+  dh(el,a){
+    const q=labShell(el,"Диффи-Хеллман",`<div class="lgrid"><label>p (простое)<input data-p value="${a.p??23}"></label><label>g<input data-g value="${a.g??5}"></label><label>Секрет Алисы a<input data-a value="${a.a??6}"></label><label>Секрет Боба b<input data-b value="${a.b??15}"></label></div>
+      <div class="row"><button class="btn small ghost" data-r>Случайные секреты</button><button class="btn small ghost" data-x>Ева перебирает</button></div>
+      <div class="cols3"><div data-al></div><div data-ev></div><div data-bo></div></div><div class="out" data-o hidden></div>`);
+    const val=()=>({p:BI(q("[data-p]").value),g:BI(q("[data-g]").value),a:BI(q("[data-a]").value),b:BI(q("[data-b]").value)});
+    const run=()=>{ const {p,g,a:x,b:y}=val(); q("[data-o]").hidden=true;
+      if([p,g,x,y].some(v=>v===null)||p<3n){ q("[data-al]").textContent="Введи целые числа, p ≥ 3."; return; }
+      const A=bpow(g,x,p), B=bpow(g,y,p), sa=bpow(B,x,p), sb=bpow(A,y,p);
+      q("[data-al]").innerHTML=`<h4>👩 Алиса</h4>знает a = ${x}\nA = g^a mod p\n  = <span class="hl">${A}</span>\nполучила B = ${B}\nсекрет = B^a mod p\n  = <span class="okc">${sa}</span>`.replace(/\n/g,"<br>");
+      q("[data-ev]").innerHTML=`<h4>🕵️ Ева (канал)</h4>видит p = ${p}\ng = ${g}\nA = ${A}\nB = ${B}\nсекрет? не знает${bprime(p)?"":'\n<span class="bad">⚠ p не простое</span>'}`.replace(/\n/g,"<br>");
+      q("[data-bo]").innerHTML=`<h4>👨 Боб</h4>знает b = ${y}\nB = g^b mod p\n  = <span class="hl">${B}</span>\nполучил A = ${A}\nсекрет = A^b mod p\n  = <span class="okc">${sb}</span>`.replace(/\n/g,"<br>"); };
+    q("[data-r]").onclick=()=>{ const p=BI(q("[data-p]").value); if(!p||p<4n) return; q("[data-a]").value=(randBig(p-3n)+2n).toString(); q("[data-b]").value=(randBig(p-3n)+2n).toString(); run(); };
+    q("[data-x]").onclick=()=>{ const {p,g,a:x}=val(); const o=q("[data-o]"); o.hidden=false; if(!p||!g||x===null) return;
+      if(p>5000000n){ o.textContent="p слишком большое: перебор займёт вечность. В этом и защита!"; return; }
+      const A=bpow(g,x,p), t0=performance.now(); let v=1n, k=0n;
+      for(let i=1n;i<p;i++){ v=v*g%p; if(v===A){ k=i; break; } }
+      o.innerHTML=k?`Ева пробует g^1, g^2, … и находит a = <span class="hl">${k}</span> за ${k} шагов (${Math.round(performance.now()-t0)} мс).\nТеперь она считает B^a и знает секрет. С маленьким p защиты нет.`:"Ева не нашла a (g не порождает нужную степень).";
+    };
+    el.querySelectorAll("input").forEach(i=>i.oninput=run); run();
+  },
+  shamir(el,a){
+    const q=labShell(el,"Разделение секрета Шамира",`<div class="lgrid"><label>Секрет<input data-s value="${a.secret??42}"></label><label>Долей n<input data-n type="number" min="2" max="10" value="${a.n??5}"></label><label>Порог t<input data-t type="number" min="1" max="10" value="${a.t??3}"></label><label>Простое p<input data-p value="${a.p??7919}"></label></div>
+      <div class="row"><button class="btn small ghost" data-new>Новый многочлен</button></div><div class="out" data-f></div>
+      <span class="muted" style="font-size:13px">Отметь доли и собери секрет (интерполяция Лагранжа в точке x = 0):</span><div class="shares" data-sh></div><div class="out" data-o></div>`);
+    let coef=[];
+    const gen=()=>{ const p=BI(q("[data-p]").value), t=+q("[data-t]").value; coef=[]; if(p&&p>2n) for(let i=1;i<t;i++) coef.push(randBig(p-1n)+1n); run(); };
+    const run=()=>{ const S0=BI(q("[data-s]").value), p=BI(q("[data-p]").value), n=Math.min(10,Math.max(2,+q("[data-n]").value||5)), t=Math.min(n,Math.max(1,+q("[data-t]").value||3));
+      if(S0===null||p===null||p<3n){ q("[data-f]").textContent="Введи целые числа, p ≥ 3."; return; }
+      if(coef.length!==t-1) return gen();
+      const warn=(!bprime(p)?"⚠ p не простое — деление сломается.\n":"")+(S0<0n||S0>=p?"⚠ Нужно 0 ≤ секрет < p.\n":"");
+      const f=x=>{ let r=0n; [S0,...coef].forEach((c,i)=>r+=c*x**BigInt(i)); return bmod(r,p); };
+      q("[data-f]").textContent=warn+`f(x) = ${[S0,...coef].map((c,i)=>i?`${c}·x${i>1?"^"+i:""}`:`${c}`).join(" + ")}  (mod ${p})\nСтепень ${t-1}: чтобы восстановить, нужно точек: ${t}.`;
+      const old=[...q("[data-sh]").querySelectorAll("input:checked")].map(i=>+i.value);
+      const sh=Array.from({length:n},(_,i)=>[BigInt(i+1),f(BigInt(i+1))]);
+      q("[data-sh]").innerHTML=sh.map(([x,y],i)=>`<label><input type="checkbox" value="${i}"${old.includes(i)?" checked":""}> Доля ${x}: (${x}, ${y})</label>`).join("");
+      q("[data-sh]").onchange=()=>comb(sh,p,t,S0); comb(sh,p,t,S0); };
+    const comb=(sh,p,t,S0)=>{ const pick=[...q("[data-sh]").querySelectorAll("input:checked")].map(i=>sh[+i.value]), o=q("[data-o]");
+      if(!pick.length){ o.textContent="Отметь доли выше."; return; }
+      let r=0n; for(const [xi,yi] of pick){ let num=1n, den=1n; for(const [xj] of pick) if(xj!==xi){ num=num*(-xj); den=den*(xi-xj); }
+        const di=binv(den,p); if(di===null){ o.textContent="Не получилось: p не простое."; return; } r=bmod(r+yi*bmod(num,p)*di,p); }
+      o.innerHTML=`Из ${pick.length} долей получили: <span class="hl">${r}</span> `+(r===bmod(S0,p)?'<span class="okc">✓ это секрет</span>':`<span class="bad">✗ мусор</span>`)+(pick.length<t?`\nДолей меньше порога (${t}): любой секрет одинаково возможен.`:""); };
+    q("[data-new]").onclick=gen; el.querySelectorAll(".lgrid input").forEach(i=>i.oninput=run); gen();
+  },
+  ecc(el,a){
+    const q=labShell(el,"Эллиптическая кривая над F<sub>p</sub>",`<div class="lgrid"><label>a<input data-a value="${a.a??2}"></label><label>b<input data-b value="${a.b??3}"></label><label>p (простое ≤ 1000)<input data-p value="${a.p??97}"></label><label>k для k·P<input data-k type="number" min="1" value="${a.k??5}"></label></div>
+      <span class="muted" style="font-size:13px">y² = x³ + ax + b (mod p). Нажми на точку — это P, ещё раз на другую — это Q.</span>
+      <canvas></canvas><div class="out" data-o></div>`);
+    const cv=q("canvas"); let c=null, pts=[], P=null, Q=null, pick=0;
+    const setup=()=>{ const A=+q("[data-a]").value, B=+q("[data-b]").value, p=+q("[data-p]").value;
+      if(![A,B,p].every(Number.isInteger)||p<3||p>1000||!bprime(BigInt(p))){ c=null; q("[data-o]").textContent="Нужны целые a, b и простое p от 3 до 1000."; canvasCtx(cv); return; }
+      c={a:md(A,p),b:md(B,p),p}; pts=ecPoints(c);
+      if(md(4*c.a**3+27*c.b**2,p)===0){ q("[data-o]").textContent="4a³ + 27b² ≡ 0: кривая вырожденная, выбери другие a, b."; c=null; canvasCtx(cv); return; }
+      const g0=pts.find(t=>t[0]===md(+a.gx,p)&&t[1]===md(+a.gy,p)); P=g0||pts.find(t=>t[1])||null; Q=null; pick=1; draw(); };
+    const draw=()=>{ if(!c) return; const {g,W}=canvasCtx(cv), m=22, sc=(W-2*m)/(c.p-1||1), X=x=>m+x*sc, Y=y=>W-m-y*sc, k=Math.max(1,Math.min(10000,Math.round(+q("[data-k]").value)||1));
+      g.strokeStyle=tok("--line"); g.lineWidth=1; g.strokeRect(m,m,W-2*m,W-2*m); g.fillStyle=tok("--muted"); g.font="10px monospace"; g.fillText("0",4,W-6); g.fillText(String(c.p-1),W-m-14,W-6);
+      const rr=Math.max(1.6,Math.min(4,120/c.p)); g.fillStyle="#7d8cb8"; for(const [x,y] of pts){ g.beginPath(); g.arc(X(x),Y(y),rr,0,7); g.fill(); }
+      const dot=(T,col,lab)=>{ if(!T) return; g.fillStyle=col; g.beginPath(); g.arc(X(T[0]),Y(T[1]),rr+3,0,7); g.fill(); g.fillStyle=tok("--ink"); g.font="bold 12px sans-serif"; g.fillText(lab,Math.min(X(T[0])+6,W-40),Math.max(Y(T[1])-6,12)); };
+      const orbit=[]; let T=null; for(let i=1;i<=Math.min(k,60);i++){ T=ecAdd(T,P,c); orbit.push(T); }
+      g.strokeStyle="rgba(255,107,107,.35)"; g.beginPath(); let first=true; for(const T of orbit){ if(!T){ first=true; continue; } first?g.moveTo(X(T[0]),Y(T[1])):g.lineTo(X(T[0]),Y(T[1])); first=false; } g.stroke();
+      const kP=ecMul(k,P,c), S=Q?ecAdd(P,Q,c):undefined, f=T=>T?`(${T[0]}, ${T[1]})`:"O (бесконечность)";
+      dot(kP,tok("--bad"),k+"P"); if(S!==undefined) dot(S,tok("--good"),"P+Q"); dot(Q,tok("--xp"),"Q"); dot(P,tok("--accent"),"P");
+      let ord=1, R=P; while(R&&ord<2000){ R=ecAdd(R,P,c); ord++; }
+      q("[data-o]").innerHTML=`Точек на кривой: ${pts.length+1} (с точкой O)\nP = <span style="color:var(--accent)">${f(P)}</span>${P?`, порядок P = ${ord}`:""}\n`+(Q?`Q = <span class="hl">${f(Q)}</span>\nP + Q = <span class="okc">${f(S)}</span>\n`:"")+`${k}·P = <span class="bad">${f(kP)}</span>\n`+(k<=12?orbit.map((T,i)=>`${i+1}P=${T?T.join(","):"O"}`).join("  "):"");
+    };
+    cv.onclick=e=>{ if(!c||!pts.length) return; const [x,y]=canvasXY(cv,e), m=22, sc=(360-2*m)/(c.p-1||1);
+      let best=null, bd=1e9; for(const t of pts){ const d=(m+t[0]*sc-x)**2+(360-m-t[1]*sc-y)**2; if(d<bd){ bd=d; best=t; } }
+      if(bd>400) return; if(pick===0){ P=best; Q=null; pick=1; } else { Q=best; pick=0; } draw(); };
+    q("[data-k]").oninput=draw; ["[data-a]","[data-b]","[data-p]"].forEach(s=>q(s).oninput=setup); setup();
+  },
+  "nonce-reuse"(el,a){
+    const c={p:a.p??211,a:a.a??1,b:a.b??1}, pts=ecPoints(c), G=pts.find(t=>t[0]===a.gx&&t[1]===a.gy)||pts.find(t=>t[0]>=2&&t[1]);
+    let n=1, R=G; while(R){ R=ecAdd(R,G,c); n++; }
+    if(!bprime(BigInt(n))){ labShell(el,"ECDSA",`<span class="muted">Порядок G = ${n} не простой — выбери другую точку.</span>`); return; }
+    const q=labShell(el,"ECDSA: один k на две подписи",`<span class="muted" style="font-size:13px">Кривая y² = x³ + ${c.a}x + ${c.b} (mod ${c.p}), G = (${G}), порядок n = ${n}. z = SHA-256(сообщение) mod n.</span>
+      <div class="lgrid"><label>Секретный ключ d<input data-d value="${a.d??77}"></label><label>k для подписи 1<input data-k1 value="${a.k??33}"></label><label>k для подписи 2<input data-k2 value="${a.k??33}"></label></div>
+      <div class="lgrid"><label>Сообщение 1<input data-m1 value="Перевод 1 BTC"></label><label>Сообщение 2<input data-m2 value="Перевод 9 BTC"></label></div>
+      <div class="out" data-s></div><div class="out" data-o></div>`);
+    const zOf=m=>parseInt(sha256(m).slice(0,8),16)%n;
+    const sign=(z,d,k)=>{ const K=ecMul(k,G,c); if(!K) return null; const r=K[0]%n, ki=ninv(k,n); if(!r||ki===null) return null; const s=md(ki*md(z+r*d,n),n); return s?{r,s}:null; };
+    const run=()=>{ const d=md(Math.round(+q("[data-d]").value)||1,n)||1, k1=md(Math.round(+q("[data-k1]").value)||1,n)||1, k2=md(Math.round(+q("[data-k2]").value)||1,n)||1;
+      const z1=zOf(q("[data-m1]").value), z2=zOf(q("[data-m2]").value), s1=sign(z1,d,k1), s2=sign(z2,d,k2), o=q("[data-o]");
+      q("[data-s]").innerHTML=`Открытый ключ Q = d·G = (${ecMul(d,G,c)})\nПодпись 1: z₁=${z1}  r=<span class="hl">${s1?s1.r:"—"}</span>  s₁=${s1?s1.s:"—"}\nПодпись 2: z₂=${z2}  r=<span class="hl">${s2?s2.r:"—"}</span>  s₂=${s2?s2.s:"—"}`;
+      if(!s1||!s2){ o.textContent="Неудачный k (r или s = 0). Выбери другой k."; return; }
+      if(s1.r!==s2.r){ o.innerHTML=`r разные — значит k разные. Ева видит две независимые подписи и <span class="okc">ничего не может</span>.`; return; }
+      const ds=md(s1.s-s2.s,n), dsi=ninv(ds,n); if(dsi===null){ o.textContent="s₁ = s₂ (одинаковые z). Возьми разные сообщения."; return; }
+      const k=md(md(z1-z2,n)*dsi,n), dd=md(md(s1.s*k-z1,n)*ninv(s1.r,n),n);
+      o.innerHTML=`🕵️ Ева заметила одинаковый r!\nk = (z₁ − z₂) / (s₁ − s₂) mod n = ${md(z1-z2,n)} · ${ds}⁻¹ = <span class="hl">${k}</span>\nd = (s₁·k − z₁) / r mod n = <span class="hl">${dd}</span>\n`+(dd===d?`<span class="bad">✓ Это настоящий секретный ключ. Кошелёк украден.</span>`:`✗ не совпало`); };
+    el.querySelectorAll("input").forEach(i=>i.oninput=run); run();
+  },
+  bloch(el){
+    const q=labShell(el,"Кубит",`<div class="row">${["X","Y","Z","H","S","T"].map(g=>`<button class="btn small ghost" data-g="${g}">${g}</button>`).join("")}<button class="btn small ghost" data-reset>|0⟩</button></div>
+      <div class="row" style="align-items:flex-start;gap:16px"><svg viewBox="0 0 160 160" width="160" height="160" data-sv></svg><div class="stack" style="gap:8px;flex:1;min-width:180px"><div class="out" data-o></div><div data-pr></div></div></div>
+      <div class="row"><button class="btn small" data-m>Измерить</button><button class="btn small ghost" data-m100>100 измерений</button></div><div class="out" data-mo>Измерение превращает кубит в 0 или 1 с вероятностями |α|² и |β|².</div>`);
+    let st=[1,0,0,0], hist=[]; const r2=Math.SQRT1_2;
+    const mul=(a,b,c,d)=>[a*c-b*d,a*d+b*c];
+    const G={X:([a,b,c,d])=>[c,d,a,b], Y:([a,b,c,d])=>[d,-c,-b,a], Z:([a,b,c,d])=>[a,b,-c,-d],
+      H:([a,b,c,d])=>[(a+c)*r2,(b+d)*r2,(a-c)*r2,(b-d)*r2], S:([a,b,c,d])=>[a,b,-d,c], T:([a,b,c,d])=>[a,b,...mul(c,d,r2,r2)]};
+    const fc=(re,im)=>{ const f=v=>(Math.abs(v)<1e-9?0:v).toFixed(3).replace(/\.?0+$/,""); re=Math.abs(re)<1e-9?0:re; im=Math.abs(im)<1e-9?0:im;
+      return im===0?f(re):re===0?f(im)+"i":`${f(re)} ${im<0?"−":"+"} ${f(Math.abs(im))}i`; };
+    const draw=()=>{ const [a,b,c,d]=st, p0=a*a+b*b, p1=c*c+d*d;
+      q("[data-o]").innerHTML=`|ψ⟩ = α|0⟩ + β|1⟩\nα = <span class="hl">${fc(a,b)}</span>\nβ = <span class="hl">${fc(c,d)}</span>\nСхема: |0⟩ ${hist.map(g=>"─"+g).join("")}─`;
+      q("[data-pr]").innerHTML=[["|0⟩",p0],["|1⟩",p1]].map(([l,p])=>`<div class="pbar"><span>${l}</span><i style="width:${p*100}%"></i><span>${(p*100).toFixed(1)}%</span></div>`).join("");
+      const th=2*Math.acos(Math.min(1,Math.sqrt(p0))), ph=Math.atan2(d,c)-Math.atan2(b,a), x=Math.sin(th)*Math.cos(ph), y=Math.sin(th)*Math.sin(ph), z=Math.cos(th);
+      const R=60, cx=80, cy=80, sx=cx+R*(y-x*.42), sy=cy+R*(-z+x*.28);
+      q("[data-sv]").innerHTML=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="var(--line)"/><ellipse cx="${cx}" cy="${cy}" rx="${R}" ry="${R*.3}" fill="none" stroke="var(--line)" stroke-dasharray="3 3"/>
+        <line x1="${cx}" y1="${cy-R}" x2="${cx}" y2="${cy+R}" stroke="var(--line)"/><text x="${cx+4}" y="${cy-R-4}" fill="var(--muted)" font-size="10">|0⟩</text><text x="${cx+4}" y="${cy+R+11}" fill="var(--muted)" font-size="10">|1⟩</text><text x="${cx-R*.42-14}" y="${cy+R*.28+12}" fill="var(--muted)" font-size="10">|+⟩</text>
+        <line x1="${cx}" y1="${cy}" x2="${sx}" y2="${sy}" stroke="var(--accent)" stroke-width="2.5"/><circle cx="${sx}" cy="${sy}" r="5" fill="var(--accent)"/>`; };
+    el.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>{ st=G[b.dataset.g](st); hist.push(b.dataset.g); if(hist.length>14) hist.shift(); draw(); });
+    q("[data-reset]").onclick=()=>{ st=[1,0,0,0]; hist=[]; q("[data-mo]").textContent="Сброс в |0⟩."; draw(); };
+    q("[data-m]").onclick=()=>{ const p0=st[0]**2+st[1]**2, r=Math.random()<p0?0:1; st=r?[0,0,1,0]:[1,0,0,0]; hist.push("M"); q("[data-mo]").innerHTML=`Выпало <span class="hl">${r}</span>. Суперпозиция разрушена: теперь кубит точно |${r}⟩.`; draw(); };
+    q("[data-m100]").onclick=()=>{ const p0=st[0]**2+st[1]**2; let z=0; for(let i=0;i<100;i++) if(Math.random()<p0) z++; q("[data-mo]").innerHTML=`100 одинаковых кубитов: нулей <span class="hl">${z}</span>, единиц <span class="hl">${100-z}</span> (ожидание ${(p0*100).toFixed(0)} / ${(100-p0*100).toFixed(0)}).`; };
+    draw();
+  },
+  lattice(el,a){
+    const b1=a.b1||[4,1], b2=a.b2||[1,3], bad=[[3*b1[0]+2*b2[0],3*b1[1]+2*b2[1]],[4*b1[0]+3*b2[0],4*b1[1]+3*b2[1]]];
+    const q=labShell(el,"Решётка и ближайшая точка",`<div class="lgrid"><label>Базис<select data-bs><option value="g">хороший (секретный)</option><option value="b">плохой (публичный)</option></select></label><label>Шум<input data-e type="range" min="0.3" max="2.5" step="0.1" value="${a.noise??1.2}"></label></div>
+      <span class="muted" style="font-size:13px">Красная точка = точка решётки + шум. Нажми на точку решётки, которая к ней ближе всего. Потом попробуй округление Бабаи с разными базисами.</span>
+      <canvas></canvas><div class="row"><button class="btn small ghost" data-new>Новая точка</button><button class="btn small ghost" data-bab>Округлить (Бабаи)</button></div><div class="out" data-o></div>`);
+    const cv=q("canvas"), V=12, sc=360/(2*V), X=x=>180+x*sc, Y=y=>180-y*sc, det=b1[0]*b2[1]-b1[1]*b2[0];
+    const lat=[]; for(let i=-20;i<=20;i++) for(let j=-20;j<=20;j++){ const x=i*b1[0]+j*b2[0], y=i*b1[1]+j*b2[1]; if(Math.abs(x)<=V+1&&Math.abs(y)<=V+1) lat.push([x,y]); }
+    let t, near, guess=null, bab=null;
+    const closest=(px,py)=>{ let b=null,bd=1e9; for(const l of lat){ const d=(l[0]-px)**2+(l[1]-py)**2; if(d<bd){ bd=d; b=l; } } return b; };
+    const fresh=()=>{ const inner=lat.filter(l=>Math.abs(l[0])<V-4&&Math.abs(l[1])<V-4), v=inner[Math.floor(Math.random()*inner.length)], e=+q("[data-e]").value, ang=Math.random()*6.283, r=e*Math.sqrt(Math.random());
+      t=[v[0]+r*Math.cos(ang),v[1]+r*Math.sin(ang)]; near=closest(...t); guess=null; bab=null; q("[data-o]").textContent="Где ближайшая точка решётки?"; draw(); };
+    const basis=()=>q("[data-bs]").value==="g"?[b1,b2]:bad;
+    const draw=()=>{ const {g}=canvasCtx(cv); g.strokeStyle=tok("--line"); g.beginPath(); g.moveTo(0,180); g.lineTo(360,180); g.moveTo(180,0); g.lineTo(180,360); g.stroke();
+      g.fillStyle="#7d8cb8"; for(const [x,y] of lat){ g.beginPath(); g.arc(X(x),Y(y),3,0,7); g.fill(); }
+      const arrow=(v,col)=>{ g.strokeStyle=col; g.lineWidth=2.5; g.beginPath(); g.moveTo(180,180); g.lineTo(X(v[0]),Y(v[1])); g.stroke(); g.lineWidth=1; };
+      const [u,w]=basis(); arrow(u,tok("--accent")); arrow(w,tok("--xp"));
+      const ring=(p,col)=>{ if(!p) return; g.strokeStyle=col; g.lineWidth=2.5; g.beginPath(); g.arc(X(p[0]),Y(p[1]),8,0,7); g.stroke(); g.lineWidth=1; };
+      ring(guess,tok("--ink")); ring(bab,tok("--xp")); if(guess||bab) ring(near,tok("--good"));
+      g.fillStyle=tok("--bad"); g.beginPath(); g.arc(X(t[0]),Y(t[1]),5,0,7); g.fill(); };
+    cv.onclick=e=>{ const [x,y]=canvasXY(cv,e); guess=closest((x-180)/sc,(180-y)/sc); const ok=guess===near;
+      q("[data-o]").innerHTML=ok?`<span class="okc">✓ Верно!</span> Ближайшая точка (${near}). Зелёное кольцо — правильный ответ.`:`<span class="bad">✗ Мимо.</span> Ты выбрал (${guess}), ближе (${near}) — зелёное кольцо.`; draw(); };
+    q("[data-bab]").onclick=()=>{ const [u,w]=basis(), D=u[0]*w[1]-u[1]*w[0], c1=Math.round((t[0]*w[1]-t[1]*w[0])/D), c2=Math.round((u[0]*t[1]-u[1]*t[0])/D);
+      bab=[c1*u[0]+c2*w[0],c1*u[1]+c2*w[1]]; const hit=bab[0]===near[0]&&bab[1]===near[1], far=Math.hypot(bab[0]-t[0],bab[1]-t[1]).toFixed(2);
+      q("[data-o]").innerHTML=`Бабаи: t = ${c1}·b₁ + ${c2}·b₂ → (${bab}), расстояние ${far}. `+(hit?`<span class="okc">✓ попал в ближайшую</span>`:`<span class="bad">✗ промах</span>`)+`\n${q("[data-bs]").value==="g"?"С хорошим базисом округление почти всегда работает.":"С плохим базисом округление часто промахивается. На этом держится LWE."}`; draw(); };
+    q("[data-bs]").onchange=()=>{ bab=null; draw(); }; q("[data-new]").onclick=fresh; q("[data-e]").onchange=fresh;
+    if(det===0){ q("[data-o]").textContent="Базис вырожден."; return; } fresh();
+  }
+};
+const md=(a,p)=>((a%p)+p)%p;
+function ninv(a,p){ a=md(a,p); let r0=a,r1=p,s0=1,s1=0; while(r1){ const k=Math.floor(r0/r1); [r0,r1]=[r1,r0-k*r1]; [s0,s1]=[s1,s0-k*s1]; } return r0===1?md(s0,p):null; }
+function ecAdd(P,Q,c){ if(!P) return Q; if(!Q) return P; const p=c.p;
+  if(P[0]===Q[0]&&md(P[1]+Q[1],p)===0) return null;
+  const l=P[0]===Q[0]?md((3*P[0]*P[0]+c.a)*ninv(2*P[1],p),p):md((Q[1]-P[1])*ninv(Q[0]-P[0],p),p);
+  const x=md(l*l-P[0]-Q[0],p); return [x,md(l*(P[0]-x)-P[1],p)]; }
+function ecMul(k,P,c){ let R=null, A=P; while(k>0){ if(k&1) R=ecAdd(R,A,c); A=ecAdd(A,A,c); k=Math.floor(k/2); } return R; }
+function ecPoints(c){ const sq=new Map(); for(let y=0;y<c.p;y++){ const s=y*y%c.p; if(!sq.has(s)) sq.set(s,[]); sq.get(s).push(y); }
+  const out=[]; for(let x=0;x<c.p;x++){ const r=md((x*x%c.p)*x+c.a*x+c.b,c.p); for(const y of sq.get(r)||[]) out.push([x,y]); } return out; }
+
+// ---------- method ----------
+function viewMethod(){ return `<div class="stack method"><div><span class="eyebrow">Методика</span><h1 style="margin-top:6px">Как учиться, чтобы реально дойти до уровня элиты</h1></div>
+<div class="grid2">
+<div class="panel stack"><h3>1. Активное припоминание</h3><p class="muted">Читать недостаточно: мозг запоминает то, что он <b>достаёт из памяти</b>. Поэтому каждое задание кончается вопросом, а флаг нужно вычислить самому. Не подсматривай подсказку первые 5 минут.</p></div>
+<div class="panel stack"><h3>2. Интервальное повторение</h3><p class="muted">Без повторения через неделю забывается до 80%. Раздел «Повторение» показывает карточки ровно тогда, когда ты начинаешь их забывать: через 1, 3, 7, 16 и 35 дней. 10 минут в день.</p></div>
+<div class="panel stack"><h3>3. Метод Фейнмана</h3><p class="muted">В конце каждой комнаты объясни тему своими словами. Где запнулся, там и дыра в понимании. Нобелевский лауреат Фейнман так учил физику.</p></div>
+<div class="panel stack"><h3>4. Сначала руками, потом код</h3><p class="muted">Посчитай пример на бумаге или в инструментах, потом напиши код на Python. Криптография понимается только через пальцы. Каждая важная атака будет написана тобой.</p></div>
+<div class="panel stack"><h3>5. Ломай, чтобы понять</h3><p class="muted">Каждый шифр мы сначала строим, а потом взламываем. Так думает криптоаналитик: он ищет, где автор ошибся.</p></div>
+<div class="panel stack"><h3>6. Желаемая трудность</h3><p class="muted">Если легко, ты не учишься. Застрял на 20 минут — это нормально и полезно. Застрял на час — бери подсказку и спрашивай Claude.</p></div>
+</div>
+<div class="panel stack"><h3>Ритм на неделю (по 1–1,5 часа в день)</h3><ul>
+<li><b>Каждый день:</b> 10 минут «Повторения», потом новая комната или её часть.</li>
+<li><b>Каждую комнату:</b> задания → флаги → объяснение своими словами → код-задание на Python.</li>
+<li><b>Раз в неделю:</b> одна настоящая задача на <a href="https://cryptohack.org" target="_blank" rel="noopener">CryptoHack</a> по пройденной теме.</li>
+<li><b>Каждый путь:</b> маленький проект на GitHub (например, свой взломщик Виженера после пути 1).</li></ul></div>
+<div class="panel stack"><h3>Дальше, чем сайт</h3><ul>
+<li><b>CryptoHack</b> — сотни задач от основ до решёток и эллиптических кривых.</li>
+<li><b>Cryptopals</b> — 8 наборов задач, где ты сам ломаешь реальные криптосистемы.</li>
+<li><b>Курс Дэна Бонэ «Cryptography I»</b> (Стэнфорд, Coursera, бесплатно).</li>
+<li><b>Книга Талера «Proofs, Arguments, and Zero-Knowledge»</b> — для пути ZK.</li></ul></div>
+<p class="sync" id="sync"></p></div>`; }
+
+// ---------- boot ----------
+loadLocal();
+(function(){ const h=(location.hash||"").slice(1); if(LAB.rooms[h]&&!LAB.rooms[h].soon) route={v:"room",id:h}; else if(["home","paths","review","tools","method","ctf"].includes(h)) route={v:h}; })();
+render();
+initCloud();
+</script>
+
+</body>
+</html>
