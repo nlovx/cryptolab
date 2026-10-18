@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#06071a">
 <meta name="description" content="CryptoLab: учим криптографию с нуля до уровня элиты. Задания с флагами, лаборатории, повторение.">
 </head>
 <body>
@@ -208,7 +209,99 @@ button.mnode{cursor:pointer}
 .chal.soon{cursor:default;opacity:.55}
 .chal .pts{font:700 13px var(--f-mono);color:var(--xp)}
 .chal.done .pts{color:var(--good)}
+
+/* ===== Liquid glass theme: aurora background, frosted panels, neon cyan→violet→pink ===== */
+:root{
+  --bg:#06071a; --ink:#f1f3ff; --muted:#a3abd0;
+  --accent:#67e8f9; --accent2:#c084fc; --pink:#f472b6;
+  --accent-soft:rgba(103,232,249,.13); --xp:#fcd34d; --xp-soft:rgba(252,211,77,.14);
+  --good:#4ade80; --good-soft:rgba(74,222,128,.13); --bad:#fb7185; --bad-soft:rgba(251,113,133,.14);
+  --line:rgba(255,255,255,.13); --panel:rgba(255,255,255,.06); --panel2:rgba(255,255,255,.07);
+  --glass:linear-gradient(140deg,rgba(255,255,255,.12),rgba(255,255,255,.035) 55%,rgba(255,255,255,.07));
+  --glass-edge:inset 0 1px 0 rgba(255,255,255,.22),inset 0 -1px 0 rgba(255,255,255,.04),0 12px 40px rgba(2,4,20,.45);
+  --grad:linear-gradient(120deg,#67e8f9,#a78bfa 55%,#f472b6);
+  --field:rgba(4,6,22,.55);
+}
+html{background:var(--bg)}
+body{background:transparent;min-height:100%}
+.aurora{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;background:radial-gradient(120% 80% at 50% 0%,#11113a 0%,#06071a 60%)}
+.aurora i{position:absolute;border-radius:50%;filter:blur(70px);opacity:.55;will-change:transform}
+.aurora i:nth-child(1){width:55vmax;height:55vmax;left:-15vmax;top:-18vmax;background:#0ea5e9;animation:drift1 26s ease-in-out infinite alternate}
+.aurora i:nth-child(2){width:48vmax;height:48vmax;right:-14vmax;top:8vmax;background:#8b5cf6;animation:drift2 32s ease-in-out infinite alternate}
+.aurora i:nth-child(3){width:42vmax;height:42vmax;left:20vmax;bottom:-22vmax;background:#ec4899;opacity:.38;animation:drift3 38s ease-in-out infinite alternate}
+.aurora i:nth-child(4){width:30vmax;height:30vmax;left:-8vmax;bottom:6vmax;background:#14b8a6;opacity:.3;animation:drift2 44s ease-in-out infinite alternate-reverse}
+@keyframes drift1{to{transform:translate(18vmax,10vmax) scale(1.15)}}
+@keyframes drift2{to{transform:translate(-16vmax,14vmax) scale(.9)}}
+@keyframes drift3{to{transform:translate(-14vmax,-12vmax) scale(1.1)}}
+
+/* frosted glass on top-level surfaces */
+.top,.panel,.task,.flash,.donebanner{background:var(--glass);-webkit-backdrop-filter:blur(22px) saturate(170%);backdrop-filter:blur(22px) saturate(170%);border:1px solid var(--line);box-shadow:var(--glass-edge)}
+.top{border-width:0 0 1px;box-shadow:inset 0 -1px 0 rgba(255,255,255,.06),0 8px 30px rgba(2,4,20,.35)}
+.panel,.task{border-radius:20px}
+.task[open]>summary{border-bottom-color:var(--line)}
+/* nested surfaces: tinted glass without extra blur (keeps phones smooth) */
+.room,.roadrow,.lab,.badge,.chal,.tabs button{background:rgba(255,255,255,.055);border:1px solid var(--line);box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+.room,.chal,.lab{border-radius:16px}
+.roadrow{border-radius:14px}
+.room,.chal,.roadrow{transition:transform .25s cubic-bezier(.2,.8,.2,1),border-color .25s,background .25s}
+.room:hover:not(.soon),.chal:hover,.roadrow:hover{transform:translateY(-2px);background:rgba(255,255,255,.09);border-color:rgba(103,232,249,.45)}
+.room.done,.chal.done{border-color:rgba(74,222,128,.55)}
+/* type and accents */
+h1{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.eyebrow{color:var(--accent)}
+.logo i{background:var(--grad);color:#0a0a22;border-radius:9px;box-shadow:0 0 18px rgba(167,139,250,.55)}
+.nav button{border-radius:12px}
+.nav button.on{background:rgba(255,255,255,.12);color:var(--ink);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 0 0 1px rgba(255,255,255,.08)}
+.chip{background:rgba(255,255,255,.08);border:1px solid var(--line);box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}
+.btn{background:var(--grad);color:#0b0b24;border-radius:14px;box-shadow:0 6px 22px rgba(167,139,250,.35),inset 0 1px 0 rgba(255,255,255,.5);transition:transform .2s,box-shadow .2s,filter .2s}
+.btn:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.08);box-shadow:0 10px 28px rgba(167,139,250,.5),inset 0 1px 0 rgba(255,255,255,.5)}
+.btn:active:not(:disabled){transform:translateY(0) scale(.98)}
+.btn.ghost,.lab .btn.ghost{background:rgba(255,255,255,.08);color:var(--ink);border:1px solid var(--line);box-shadow:inset 0 1px 0 rgba(255,255,255,.15)}
+.tabs button.on{background:var(--grad);color:#0b0b24;border-color:transparent}
+.bar{background:rgba(255,255,255,.08);height:9px;border-radius:6px}
+.bar i{background:var(--grad);box-shadow:0 0 12px rgba(103,232,249,.5)}
+.bar.xp i{background:linear-gradient(90deg,#fcd34d,#fb923c);box-shadow:0 0 12px rgba(252,211,77,.5)}
+.pathno{background:var(--grad);color:#0b0b24;border-radius:12px}
+.lvl .name{background:linear-gradient(90deg,#fcd34d,#fb923c);-webkit-background-clip:text;background-clip:text;color:transparent}
+.tag{background:rgba(0,0,0,.28);border-radius:8px}
+.content .why{background:linear-gradient(135deg,rgba(103,232,249,.12),rgba(192,132,252,.12));border:1px solid rgba(167,139,250,.25)}
+.content code{background:rgba(255,255,255,.08);color:#fde68a}
+.content pre,.out,.codetask pre,.lab canvas,.cols3>div,.mnode{background:rgba(3,5,20,.62);border-color:var(--line)}
+.content p,.content li,.method li{color:#d5daf2}
+input,textarea,select,.ans input,.choice,.tool textarea,.tool input,.tool select,.lab input,.lab select,.lab textarea,.feyn textarea{background:var(--field)!important;border-color:var(--line)!important;border-radius:12px!important}
+.ans input:focus,.tool textarea:focus,.tool input:focus,.lab input:focus,.feyn textarea:focus{border-color:rgba(103,232,249,.6)!important;box-shadow:0 0 0 3px rgba(103,232,249,.15)}
+.choice.okk{background:var(--good-soft)!important;border-color:var(--good)!important}
+.choice.err{background:var(--bad-soft)!important;border-color:var(--bad)!important}
+.ans input.okk{border-color:var(--good)!important}
+.ans input.err{border-color:var(--bad)!important}
+.donebanner{border-color:rgba(74,222,128,.5)}
+.toast{background:var(--grad);color:#0b0b24;box-shadow:0 10px 30px rgba(167,139,250,.5)}
+.freq i,.pbar i{background:var(--grad)}
+.badge.on{border-color:rgba(252,211,77,.6);box-shadow:0 0 16px rgba(252,211,77,.2),inset 0 1px 0 rgba(255,255,255,.15)}
+.daily{border-color:rgba(252,211,77,.45)}
+
+/* phones */
+@media (max-width:720px){
+  .top,.panel,.task,.flash,.donebanner{-webkit-backdrop-filter:blur(14px) saturate(150%);backdrop-filter:blur(14px) saturate(150%)}
+  .aurora i{filter:blur(55px)}
+  .topin{gap:10px;padding-block:8px}
+  .logo{font-size:16px}
+  .chip{padding:4px 9px;font-size:13px}
+  main{padding-block:16px 56px}
+  .panel{padding:16px;border-radius:18px}
+  .tbody{padding:14px}
+  .task>summary{padding:13px 14px}
+  .task>summary .tn{min-width:0}
+  .ans input{min-width:0;flex-basis:100%}
+  .ans .btn{width:100%}
+  .rooms,.chals{grid-template-columns:1fr}
+  .hero .grid3{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .stat b{font-size:22px}
+  .stat span{font-size:12.5px}
+}
+@media (prefers-reduced-motion:reduce){.aurora i{animation:none}*{transition:none!important}}
 </style>
+<div class="aurora" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
 
 <header class="top gut">
   <div class="wrap topin">
