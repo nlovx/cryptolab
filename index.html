@@ -220,6 +220,7 @@ button.mnode{cursor:pointer}
       <button data-v="ctf">CTF</button>
       <button data-v="tools">Инструменты</button>
       <button data-v="method">Как учиться</button>
+      <button data-v="profile">Профиль</button>
     </nav>
     <div class="me"><span class="chip fire" id="streak" title="Серия дней">🔥 0</span><span class="chip xp" id="xpchip">0 XP</span></div>
   </div>
@@ -285,7 +286,7 @@ async function flush(){
   store.busy=false; if(store.pending) flush();
 }
 function merge(a,b){ // union of two progress states (local + cloud)
-  const out={v:1,solved:{...a.solved,...b.solved},srs:{...a.srs},notes:{...a.notes,...b.notes},days:[...new Set([...(a.days||[]),...(b.days||[])])].sort().slice(-120),badges:{...(a.badges||{}),...(b.badges||{})}};
+  const out={v:1,nick:b.nick||a.nick||"",solved:{...a.solved,...b.solved},srs:{...a.srs},notes:{...a.notes,...b.notes},days:[...new Set([...(a.days||[]),...(b.days||[])])].sort().slice(-120),badges:{...(a.badges||{}),...(b.badges||{})}};
   for(const [k,v] of Object.entries(b.srs||{})){ const o=out.srs[k]; if(!o||(v.t||0)>(o.t||0)) out.srs[k]=v; }
   return out;
 }
@@ -305,7 +306,58 @@ async function initCloud(tries=0){
     renderSync();
   }catch(e){ /* stay local */ }
 }
-function renderSync(){ const el=document.getElementById("sync"); if(el) el.textContent = store.mode==="db" ? "☁ Прогресс сохраняется в твоём аккаунте и виден на всех устройствах." : "Прогресс сохраняется в этом браузере."; }
+function renderSync(){ const el=document.getElementById("sync"); if(el) el.textContent = store.mode==="db" ? "☁ Прогресс сохраняется в твоём аккаунте и виден на всех устройствах." : "Прогресс сохраняется в этом браузере. Чтобы перенести его на другое устройство: «Профиль» → код переноса."; }
+
+// ---------- profile: progress transfer code (no server) ----------
+const b64u = bytes => { let s=""; for(let i=0;i<bytes.length;i+=0x8000) s+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000)); return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); };
+const unb64u = str => { str=str.replace(/-/g,"+").replace(/_/g,"/"); while(str.length%4) str+="="; return Uint8Array.from(atob(str),c=>c.charCodeAt(0)); };
+async function pipeBytes(bytes, stream){ const buf=await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer(); return new Uint8Array(buf); }
+async function exportCode(){
+  const payload={v:1,nick:S.nick||"",solved:Object.keys(S.solved),srs:S.srs,days:S.days,badges:S.badges||{},notes:S.notes};
+  const raw=enc.encode(JSON.stringify(payload));
+  if(typeof CompressionStream==="function"){ try{ return "CL1."+b64u(await pipeBytes(raw,new CompressionStream("deflate-raw"))); }catch(e){} }
+  return "CL0."+b64u(raw);
+}
+async function importCode(code){
+  code=code.trim().replace(/\s+/g,"");
+  let raw;
+  if(code.startsWith("CL1.")){ if(typeof DecompressionStream!=="function") throw new Error("old"); raw=await pipeBytes(unb64u(code.slice(4)),new DecompressionStream("deflate-raw")); }
+  else if(code.startsWith("CL0.")) raw=unb64u(code.slice(4));
+  else throw new Error("format");
+  const p=JSON.parse(dec.decode(raw));
+  if(!p||p.v!==1||!Array.isArray(p.solved)) throw new Error("format");
+  const solved={}; p.solved.forEach(id=>{ if(typeof id==="string") solved[id]=1; });
+  return {v:1,nick:typeof p.nick==="string"?p.nick.slice(0,24):"",solved,srs:p.srs||{},notes:p.notes||{},days:Array.isArray(p.days)?p.days:[],badges:p.badges||{}};
+}
+function viewProfile(){
+  const xp=xpTotal(), L=level(xp), live=liveRooms();
+  const doneRooms=live.filter(r=>{const s=roomStats(r);return s.total&&s.done===s.total;}).length;
+  return `<div class="stack"><div><span class="eyebrow">Профиль</span><h1 style="margin-top:6px">${esc(S.nick||"Без ника")}</h1>
+  <p class="muted" style="margin-top:6px">${esc(L.cur.name)} · ${xp} XP · ${Object.keys(S.solved).length} флагов · ${doneRooms} комнат · 🔥 ${streak()}</p></div>
+  <div class="panel tool"><label for="pf-nick">Ник</label><div class="row"><input id="pf-nick" maxlength="24" value="${esc(S.nick||"")}" placeholder="Например, nagets" style="flex:1;min-width:180px"><button class="btn" id="pf-save">Сохранить</button></div></div>
+  <div class="grid2">
+    <div class="panel tool"><h3>Перенести прогресс на другое устройство</h3>
+      <p class="muted" style="font-size:14px">1. Нажми «Получить код» и скопируй его.<br>2. Отправь себе (например, в Telegram).<br>3. На другом устройстве открой сайт → «Профиль» → вставь код справа.</p>
+      <button class="btn" id="pf-make">Получить код</button>
+      <textarea id="pf-code" readonly hidden></textarea>
+      <button class="btn ghost" id="pf-copy" hidden>Скопировать</button></div>
+    <div class="panel tool"><h3>Загрузить прогресс по коду</h3>
+      <p class="muted" style="font-size:14px">Прогресс объединится с тем, что уже есть на этом устройстве. Ничего не потеряется.</p>
+      <label for="pf-in">Код</label><textarea id="pf-in" placeholder="CL1...."></textarea>
+      <button class="btn" id="pf-load">Загрузить</button><span class="muted" id="pf-msg" style="font-size:14px"></span></div>
+  </div>
+  <p class="muted" style="font-size:14px">Код — это и есть твой «аккаунт»: храни последний код в заметках, и прогресс никогда не потеряется. Чужим его не давай, иначе они получат твой прогресс.</p>
+  <p class="sync" id="sync"></p></div>`;
+}
+function bindProfile(){
+  $("#pf-save").onclick=()=>{ S.nick=$("#pf-nick").value.trim().slice(0,24); save(); toast("Ник сохранён"); render(); };
+  $("#pf-make").onclick=async()=>{ const t=$("#pf-code"); t.value=await exportCode(); t.hidden=false; $("#pf-copy").hidden=false; t.select(); };
+  $("#pf-copy").onclick=async()=>{ const t=$("#pf-code"); try{ await navigator.clipboard.writeText(t.value); toast("Код скопирован"); }catch(e){ t.focus(); t.select(); toast("Выделил код — скопируй вручную"); } };
+  $("#pf-load").onclick=async()=>{ const msg=$("#pf-msg");
+    try{ const inc=await importCode($("#pf-in").value); const before=Object.keys(S.solved).length; S=merge(S,inc); save(); render();
+      toast(`Загружено: +${Object.keys(S.solved).length-before} флагов`); }
+    catch(e){ msg.textContent=e.message==="old"?"Этот браузер слишком старый для сжатого кода. Обнови его.":"Код не подходит. Скопируй его целиком, начиная с CL."; } };
+}
 
 // ---------- ui helpers ----------
 function toast(t){ const el=$("#toast"); el.textContent=t; el.classList.add("on"); clearTimeout(toast.t); toast.t=setTimeout(()=>el.classList.remove("on"),1800); }
@@ -325,6 +377,7 @@ function render(){
   else if(route.v==="review") { v.innerHTML=viewReview(); bindReview(); }
   else if(route.v==="tools") { v.innerHTML=viewTools(); bindTools(route.tool||"convert"); }
   else if(route.v==="method") v.innerHTML=viewMethod();
+  else if(route.v==="profile") { v.innerHTML=viewProfile(); bindProfile(); }
   else if(route.v==="ctf"){ if(route.id&&LAB.rooms[route.id]&&!LAB.rooms[route.id].soon){ v.innerHTML=viewChallenge(route.id,route.ti); bindQs(route.id); mountLabs(route.id); } else v.innerHTML=viewCtf(); }
   renderSync();
 }
@@ -916,7 +969,7 @@ function viewMethod(){ return `<div class="stack method"><div><span class="eyebr
 
 // ---------- boot ----------
 loadLocal();
-(function(){ const h=(location.hash||"").slice(1); if(LAB.rooms[h]&&!LAB.rooms[h].soon) route={v:"room",id:h}; else if(["home","paths","review","tools","method","ctf"].includes(h)) route={v:h}; })();
+(function(){ const h=(location.hash||"").slice(1); if(LAB.rooms[h]&&!LAB.rooms[h].soon) route={v:"room",id:h}; else if(["home","paths","review","tools","method","ctf","profile"].includes(h)) route={v:h}; })();
 render();
 initCloud();
 </script>
