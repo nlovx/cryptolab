@@ -398,6 +398,7 @@ const norm = s => String(s).trim().toLowerCase().replace(/\s+/g," ");
 
 // ---------- model ----------
 const XPQ = {"Лёгкая":10,"Средняя":15,"Сложная":20}, ROOM_BONUS = 50;
+const ruTasks = n => { const d=n%10, h=n%100; return d===1&&h!==11?"задание":d>=2&&d<=4&&(h<12||h>14)?"задания":"заданий"; };
 const allRooms = () => LAB.paths.flatMap(p => p.rooms.map(id => ({id, ...LAB.rooms[id]})));
 const liveRooms = () => allRooms().filter(r => !r.soon);
 const qsOf = r => r.tasks.flatMap(t => t.qs);
@@ -567,7 +568,7 @@ function roomCard(id){
   const r={id,...LAB.rooms[id]};
   if(r.soon) return `<div class="room soon"><span class="tag soon">скоро</span><h3>${esc(r.title)}</h3><span class="muted" style="font-size:14px">${esc(r.about)}</span></div>`;
   const s=roomStats(r);
-  return `<button class="room${s.done===s.total?" done":""}" data-room="${id}"><div class="meta"><span class="tag ${r.diff}">${r.diff}</span><span>~${r.min} мин</span><span>${r.tasks.length} заданий</span></div><h3>${esc(r.title)}</h3><div class="bar"><i style="width:${s.pct}%"></i></div><span class="muted num" style="font-size:13px">${s.done}/${s.total} ответов</span></button>`;
+  return `<button class="room${s.done===s.total?" done":""}" data-room="${id}"><div class="meta"><span class="tag ${r.diff}">${r.diff}</span><span>~${r.min} мин</span><span>${r.tasks.length} ${ruTasks(r.tasks.length)}</span></div><h3>${esc(r.title)}</h3><div class="bar"><i style="width:${s.pct}%"></i></div><span class="muted num" style="font-size:13px">${s.done}/${s.total} ответов</span></button>`;
 }
 function viewPaths(){
   return `<div class="stack"><div><span class="eyebrow">Карта</span><h1 style="margin-top:6px">Пути обучения</h1></div>`+
@@ -597,7 +598,7 @@ function viewRoom(id){
   const complete=s.done===s.total;
   return `<div class="stack">
     <div class="roomhead"><button class="back" data-go="paths">← ${esc(p.title)}</button>
-      <div class="row"><span class="tag ${r.diff}">${r.diff}</span><span class="muted">~${r.min} мин · ${r.tasks.length} заданий</span></div>
+      <div class="row"><span class="tag ${r.diff}">${r.diff}</span><span class="muted">~${r.min} мин · ${r.tasks.length} ${ruTasks(r.tasks.length)}</span></div>
       <h1>${esc(r.title)}</h1><p class="muted" style="max-width:70ch">${esc(r.intro)}</p>
       <div class="bar"><i style="width:${s.pct}%"></i></div></div>
     ${complete?`<div class="donebanner"><b>Комната пройдена! +${ROOM_BONUS} XP бонус</b><span class="muted">Её карточки добавлены в «Повторение». Вернись к ним завтра.</span></div>`:""}
